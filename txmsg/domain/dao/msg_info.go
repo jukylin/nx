@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/jukylin/esim/mysql"
 	"gorm.io/gorm"
-	"study-go/txmsg/domain/entity"
+	"github.com/jukylin/nx/txmsg/domain/entity"
 )
 
 type MsgInfoDao struct {

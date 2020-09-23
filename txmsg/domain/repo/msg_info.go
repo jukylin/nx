@@ -2,10 +2,10 @@ package repo
 
 import (
 	"context"
-	"study-go/txmsg/domain/entity"
+	"github.com/jukylin/nx/txmsg/domain/entity"
 	"gorm.io/gorm"
 	"github.com/jukylin/esim/log"
-	"study-go/txmsg/domain/dao"
+	"github.com/jukylin/nx/txmsg/domain/dao"
 	"time"
 )
 

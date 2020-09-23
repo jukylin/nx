@@ -3,7 +3,7 @@ package queue
 import (
 	"github.com/jaegertracing/jaeger/pkg/queue"
 	"github.com/jukylin/esim/log"
-	"study-go/txmsg/domain/entity"
+	"github.com/jukylin/nx/txmsg/domain/entity"
 	"github.com/prometheus/client_golang/prometheus"
 	"time"
 	"context"

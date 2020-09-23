@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	entity "study-go/txmsg/domain/entity"
+	entity "github.com/jukylin/nx/txmsg/domain/entity"
 
 	mock "github.com/stretchr/testify/mock"
 )

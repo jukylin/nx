@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"study-go/txmsg/domain/entity"
+	"github.com/jukylin/nx/txmsg/domain/entity"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

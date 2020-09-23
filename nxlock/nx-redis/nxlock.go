@@ -6,7 +6,7 @@ import (
 	"github.com/jukylin/esim/redis"
 	"errors"
 	"time"
-	"study-go/nxlock/pkg"
+	"github.com/jukylin/nx/nxlock/pkg"
 )
 
 type Client struct {

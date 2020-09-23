@@ -4,7 +4,7 @@ package mocks
 
 import (
 	context "context"
-	queue "study-go/txmsg/queue"
+	queue "github.com/jukylin/nx/txmsg/queue"
 
 	mock "github.com/stretchr/testify/mock"
 )

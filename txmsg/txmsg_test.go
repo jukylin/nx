@@ -3,11 +3,11 @@ package txmsg
 import (
 	"context"
 	"os"
-	"study-go/nxlock"
-	mocks2 "study-go/nxlock/pkg/mocks"
-	"study-go/txmsg/domain/entity"
-	"study-go/txmsg/domain/repo/mocks"
-	"study-go/txmsg/queue"
+	"github.com/jukylin/nx/nxlock"
+	mocks2 "github.com/jukylin/nx/nxlock/pkg/mocks"
+	"github.com/jukylin/nx/txmsg/domain/entity"
+	"github.com/jukylin/nx/txmsg/domain/repo/mocks"
+	"github.com/jukylin/nx/txmsg/queue"
 	"testing"
 	"time"
 

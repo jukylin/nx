@@ -1,7 +1,7 @@
 package queue
 
 import (
-	entity "study-go/txmsg/domain/entity"
+	entity "github.com/jukylin/nx/txmsg/domain/entity"
 )
 
 type FakeLocalQueue struct{}

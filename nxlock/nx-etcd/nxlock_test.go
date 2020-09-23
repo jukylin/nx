@@ -8,7 +8,7 @@ import (
 	"github.com/jukylin/esim/log"
 	"go.etcd.io/etcd/v3/clientv3"
 	"github.com/stretchr/testify/assert"
-	"study-go/nxlock/nx-etcd/mocks"
+	"github.com/jukylin/nx/nxlock/nx-etcd/mocks"
 )
 
 var (

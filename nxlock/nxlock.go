@@ -6,7 +6,7 @@ import (
 	"sync"
 	"errors"
 	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
-	"study-go/nxlock/pkg"
+	"github.com/jukylin/nx/nxlock/pkg"
 )
 
 type Option func(*Nxlock)

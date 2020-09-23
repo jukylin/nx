@@ -3,7 +3,7 @@ package queue
 import (
 	"time"
 	"context"
-	"study-go/txmsg/domain/entity"
+	"github.com/jukylin/nx/txmsg/domain/entity"
 )
 
 // 本地队列

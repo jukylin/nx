@@ -5,7 +5,7 @@ import (
 	"github.com/jukylin/esim/log"
 	"go.etcd.io/etcd/v3/clientv3"
 	"errors"
-	"study-go/nxlock/pkg"
+	"github.com/jukylin/nx/nxlock/pkg"
 )
 
 type EtcdV3 struct {

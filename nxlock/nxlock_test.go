@@ -10,9 +10,9 @@ import (
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/config"
 	"github.com/stretchr/testify/assert"
-	"study-go/nxlock/nx-redis"
+	"github.com/jukylin/nx/nxlock/nx-redis"
 	"github.com/jukylin/esim/redis"
-	"study-go/nxlock/pkg"
+	"github.com/jukylin/nx/nxlock/pkg"
 )
 
 var logger log.Logger

@@ -3,7 +3,7 @@ package repo
 import (
 	"context"
 	"reflect"
-	"study-go/txmsg/domain/entity"
+	"github.com/jukylin/nx/txmsg/domain/entity"
 	"testing"
 	"time"
 
