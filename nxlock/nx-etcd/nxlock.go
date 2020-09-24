@@ -103,10 +103,10 @@ func (e3 *EtcdV3) keepAlive(ctx context.Context, leaseID clientv3.LeaseID) error
 			case resp, ok := <-kaResp:
 				if ok {
 					if resp != nil {
-						e3.logger.Debugc(ctx, "keepAlive %d : %+v", leaseID, resp)
+						e3.logger.Errorc(ctx, "keepAlive %d : %+v", leaseID, resp)
 					}
 				} else {
-					e3.logger.Debugc(ctx, "LeaseKeepAlive %d is close.", leaseID)
+					e3.logger.Errorc(ctx, "LeaseKeepAlive %d is close.", leaseID)
 					return
 				}
 			}

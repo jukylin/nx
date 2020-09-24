@@ -80,7 +80,7 @@ func (rc *Client) keepAlive(ctx context.Context, key, val string, ttl int64)  {
 			case <- c:
 				err := rc.expire(ctx, key, ttl)
 				if err != nil {
-					rc.logger.Debugc(ctx, err.Error())
+					rc.logger.Errorc(ctx, "续租失败", err.Error())
 				}
 			case <- ctx.Done():
 				return
@@ -94,7 +94,6 @@ func (rc *Client) expire(ctx context.Context, key string, ttl int64) error {
 
 	_, err := redis.Bool(conn.Do(ctx, "expire", key, ttl))
 	if err != nil {
-		rc.logger.Debugc(ctx, err.Error())
 		return err
 	}
 
