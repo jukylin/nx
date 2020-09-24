@@ -43,4 +43,9 @@ func TestRedisClient_Lock(t *testing.T) {
 	assert.Nil(t, err)
 	err = rclient.Release(ctx, key)
 	assert.Nil(t, err)
+
+	conn := client.GetCtxRedisConn()
+	res, nil := redis.Bool(conn.Do(context.Background(), "exists", key))
+	assert.Nil(t, nil)
+	assert.False(t, res)
 }
