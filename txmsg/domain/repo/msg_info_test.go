@@ -3,9 +3,10 @@ package repo
 import (
 	"context"
 	"reflect"
-	"github.com/jukylin/nx/txmsg/domain/entity"
 	"testing"
 	"time"
+
+	"github.com/jukylin/nx/txmsg/domain/entity"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -95,9 +96,9 @@ func Test_msgInfoRepo_GetWaitingMsg(t *testing.T) {
 
 	ctx := context.Background()
 	tests := []struct {
-		name   string
-		args   args
-		count   int
+		name  string
+		args  args
+		count int
 	}{
 		{"获取等待处理的数据", args{ctx, 2}, 2},
 	}

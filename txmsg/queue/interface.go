@@ -1,8 +1,9 @@
 package queue
 
 import (
-	"time"
 	"context"
+	"time"
+
 	"github.com/jukylin/nx/txmsg/domain/entity"
 )
 

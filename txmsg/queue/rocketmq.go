@@ -2,11 +2,12 @@ package queue
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/apache/rocketmq-client-go/v2"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
-	"github.com/jukylin/esim/log"
 	"github.com/apache/rocketmq-client-go/v2/producer"
-	"fmt"
+	"github.com/jukylin/esim/log"
 )
 
 type RocketMqOption func(c *RocketMq)
@@ -19,7 +20,7 @@ type RocketMq struct {
 	producerOption []producer.Option
 }
 
-func NewRocketMq(options ...RocketMqOption)  {
+func NewRocketMq(options ...RocketMqOption) {
 	rm := &RocketMq{}
 
 	for _, option := range options {

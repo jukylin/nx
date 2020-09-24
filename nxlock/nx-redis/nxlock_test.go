@@ -1,12 +1,13 @@
 package nx_redis
 
 import (
-	"testing"
-	"os"
-	"github.com/jukylin/esim/redis"
-	"github.com/jukylin/esim/log"
 	"context"
+	"os"
+	"testing"
+
 	"github.com/jukylin/esim/config"
+	"github.com/jukylin/esim/log"
+	"github.com/jukylin/esim/redis"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +22,6 @@ func TestMain(m *testing.M) {
 	conf = config.NewMemConfig()
 	conf.Set("debug", true)
 	code := m.Run()
-
 
 	os.Exit(code)
 }

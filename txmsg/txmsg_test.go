@@ -3,13 +3,14 @@ package txmsg
 import (
 	"context"
 	"os"
+	"testing"
+	"time"
+
 	"github.com/jukylin/nx/nxlock"
 	mocks2 "github.com/jukylin/nx/nxlock/pkg/mocks"
 	"github.com/jukylin/nx/txmsg/domain/entity"
 	"github.com/jukylin/nx/txmsg/domain/repo/mocks"
 	"github.com/jukylin/nx/txmsg/queue"
-	"testing"
-	"time"
 
 	"github.com/jukylin/esim/log"
 )
@@ -228,7 +229,7 @@ func TestTxMsg_processor(t *testing.T) {
 
 	msgInfoRepo := &mocks.MsgInfoRepo{}
 	msgInfoRepo.On("FindById", ctx, int64(2)).Return(entity.MsgInfo{})
-	msgInfoRepo.On("FindById", ctx, int64(3)).Return(entity.MsgInfo{ID:1})
+	msgInfoRepo.On("FindById", ctx, int64(3)).Return(entity.MsgInfo{ID: 1})
 	msgInfoRepo.On("UpdateStatusById", ctx, int64(3)).Return(int64(1))
 
 	localQueue := &queue.FakeLocalQueue{}

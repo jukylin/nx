@@ -1,12 +1,13 @@
 package queue
 
 import (
+	"context"
+	"time"
+
 	"github.com/jaegertracing/jaeger/pkg/queue"
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/txmsg/domain/entity"
 	"github.com/prometheus/client_golang/prometheus"
-	"time"
-	"context"
 )
 
 // 实现 LocalQueue 接口

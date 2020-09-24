@@ -1,19 +1,19 @@
 package nx_etcd
 
 import (
-	"time"
 	"context"
 	"testing"
+	"time"
 
 	"github.com/jukylin/esim/log"
-	"go.etcd.io/etcd/v3/clientv3"
-	"github.com/stretchr/testify/assert"
 	"github.com/jukylin/nx/nxlock/nx-etcd/mocks"
+	"github.com/stretchr/testify/assert"
+	"go.etcd.io/etcd/v3/clientv3"
 )
 
 var (
-	dialTimeout    = 5 * time.Second
-	endpoints      = []string{"127.0.0.1:2379"}
+	dialTimeout = 5 * time.Second
+	endpoints   = []string{"127.0.0.1:2379"}
 )
 
 func TestEtcdV3_LeaseNotFound(t *testing.T) {
@@ -31,7 +31,7 @@ func TestEtcdV3_LeaseNotFound(t *testing.T) {
 
 	lease := &mocks.Lease{}
 	lease.On("Grant", ctx, int64(10)).Return(&clientv3.LeaseGrantResponse{
-		ID : clientv3.LeaseID(100),
+		ID:  clientv3.LeaseID(100),
 		TTL: 10,
 	}, nil)
 
@@ -46,7 +46,6 @@ func TestEtcdV3_LeaseNotFound(t *testing.T) {
 	assert.Error(t, err)
 }
 
-
 func TestEtcdV3_LockAndRelease(t *testing.T) {
 	etcdv3 := NewEtcdV3(
 		WithConfig(clientv3.Config{
@@ -60,7 +59,7 @@ func TestEtcdV3_LockAndRelease(t *testing.T) {
 
 	ctx := context.Background()
 	key := "LockAndRelease"
-	for i := 0; i < 3;i++ {
+	for i := 0; i < 3; i++ {
 		err := etcdv3.Lock(ctx, key, "1", 10)
 		assert.Nil(t, err)
 		err = etcdv3.Release(ctx, key)

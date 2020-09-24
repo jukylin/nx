@@ -1,12 +1,13 @@
 package nxlock
 
 import (
-	"github.com/jukylin/esim/log"
 	"context"
-	"sync"
 	"errors"
-	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
+	"sync"
+
+	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/nxlock/pkg"
+	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
 )
 
 type Option func(*Nxlock)
@@ -37,10 +38,8 @@ func NewNxlock(options ...Option) *Nxlock {
 
 	nl.holdLock = &sync.Map{}
 
-
 	return nl
 }
-
 
 func WithLogger(logger log.Logger) Option {
 	return func(nl *Nxlock) {

@@ -2,11 +2,12 @@ package repo
 
 import (
 	"context"
-	"github.com/jukylin/nx/txmsg/domain/entity"
-	"gorm.io/gorm"
+	"time"
+
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/txmsg/domain/dao"
-	"time"
+	"github.com/jukylin/nx/txmsg/domain/entity"
+	"gorm.io/gorm"
 )
 
 type MsgInfoRepo interface {
@@ -93,7 +94,7 @@ func (mir *msgInfoRepo) UpdateByIds(ctx context.Context, tx *gorm.DB, update map
 }
 
 func (mir *msgInfoRepo) UpdateStatusById(ctx context.Context, id int64) int64 {
-	insertId, err := mir.msgInfoDao.Update(ctx, map[string]interface{}{"status":1}, id)
+	insertId, err := mir.msgInfoDao.Update(ctx, map[string]interface{}{"status": 1}, id)
 	if err != nil {
 		mir.logger.Errorc(ctx, err.Error())
 	}
@@ -103,7 +104,7 @@ func (mir *msgInfoRepo) UpdateStatusById(ctx context.Context, id int64) int64 {
 
 // 删除前三天的数据
 func (mir *msgInfoRepo) DelSendedMsg(ctx context.Context, num int) int64 {
-	insertId, err := mir.msgInfoDao.Delete(ctx, num, "create_time < ? and status = 1", time.Now().Add(- 3 * time.Minute * 60 * 24))
+	insertId, err := mir.msgInfoDao.Delete(ctx, num, "create_time < ? and status = 1", time.Now().Add(-3*time.Minute*60*24))
 	if err != nil {
 		mir.logger.Errorc(ctx, err.Error())
 	}

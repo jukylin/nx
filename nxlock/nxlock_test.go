@@ -2,17 +2,16 @@ package nxlock
 
 import (
 	"context"
+	"os"
 	"sync"
 	"testing"
-	"os"
 	"time"
 
-	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/config"
-	"github.com/stretchr/testify/assert"
-	"github.com/jukylin/nx/nxlock/nx-redis"
+	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/redis"
 	"github.com/jukylin/nx/nxlock/pkg"
+	"github.com/stretchr/testify/assert"
 )
 
 var logger log.Logger
@@ -40,7 +39,6 @@ func TestMain(m *testing.M) {
 	)
 
 	code := m.Run()
-
 
 	os.Exit(code)
 }
@@ -70,7 +68,6 @@ func TestNxlock_LocalGoroutineLock(t *testing.T) {
 	wg.Wait()
 	nxlock.Release(ctx, key)
 }
-
 
 func TestNxlock_RedisSolution_SimulationMulProcessLock(t *testing.T) {
 	ctx := context.Background()

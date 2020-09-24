@@ -4,6 +4,7 @@ package mocks
 
 import (
 	context "context"
+
 	entity "github.com/jukylin/nx/txmsg/domain/entity"
 
 	gorm "gorm.io/gorm"

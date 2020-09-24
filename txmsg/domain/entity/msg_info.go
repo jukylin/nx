@@ -49,4 +49,3 @@ func (mi MsgInfo) TableName() string {
 func (mi MsgInfo) IsEmpty() bool {
 	return mi.ID == 0
 }
-

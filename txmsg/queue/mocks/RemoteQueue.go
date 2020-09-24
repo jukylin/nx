@@ -4,6 +4,7 @@ package mocks
 
 import (
 	context "context"
+
 	queue "github.com/jukylin/nx/txmsg/queue"
 
 	mock "github.com/stretchr/testify/mock"

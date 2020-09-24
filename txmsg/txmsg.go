@@ -1,15 +1,16 @@
 package txmsg
 
 import (
-	"github.com/jukylin/esim/log"
 	"context"
-	"github.com/jukylin/nx/txmsg/domain/repo"
-	"github.com/jukylin/nx/txmsg/queue"
-	"github.com/jukylin/nx/txmsg/domain/entity"
-	"github.com/jukylin/nx/nxlock"
+	"fmt"
 	"sync"
 	"time"
-	"fmt"
+
+	"github.com/jukylin/esim/log"
+	"github.com/jukylin/nx/nxlock"
+	"github.com/jukylin/nx/txmsg/domain/entity"
+	"github.com/jukylin/nx/txmsg/domain/repo"
+	"github.com/jukylin/nx/txmsg/queue"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -300,10 +301,10 @@ func (tm *TxMsg) keepLockTask(ctx context.Context) {
 }
 
 // 补漏 扫描最近10分钟未提交事务消息,防止各种场景的消息丢失
-func (tm *TxMsg) scanMsgTask(ctx context.Context)  {
+func (tm *TxMsg) scanMsgTask(ctx context.Context) {
 	for {
 		select {
-		case _, ok := <- tm.scanMsgChan:
+		case _, ok := <-tm.scanMsgChan:
 			if ok {
 				start := time.Now()
 
@@ -333,7 +334,7 @@ func (tm *TxMsg) scanMsgTask(ctx context.Context)  {
 						}
 					}
 
-					if count == 0  || num > tm.maxDealNumOneTime {
+					if count == 0 || num > tm.maxDealNumOneTime {
 						goto WorkDone
 					}
 				}
@@ -346,7 +347,7 @@ func (tm *TxMsg) scanMsgTask(ctx context.Context)  {
 				lab["name"] = "scan_msg"
 				taskSecond.With(lab).Set(end.Sub(start).Seconds())
 			}
-		case <- ctx.Done() :
+		case <-ctx.Done():
 			tm.logger.Infoc(ctx, "补漏退出")
 			return
 		}
@@ -354,10 +355,10 @@ func (tm *TxMsg) scanMsgTask(ctx context.Context)  {
 }
 
 // 删除三天之前的发送成功的消息
-func (tm *TxMsg) cleanMsgTask(ctx context.Context)  {
+func (tm *TxMsg) cleanMsgTask(ctx context.Context) {
 	for {
 		select {
-		case _, ok := <- tm.cleanMsgChan:
+		case _, ok := <-tm.cleanMsgChan:
 			if ok {
 				start := time.Now()
 
@@ -381,14 +382,14 @@ func (tm *TxMsg) cleanMsgTask(ctx context.Context)  {
 				lab["name"] = "clean_msg"
 				taskSecond.With(lab).Set(end.Sub(start).Seconds())
 			}
-		case <- ctx.Done() :
+		case <-ctx.Done():
 			tm.logger.Infoc(ctx, "清除退出")
 			return
 		}
 	}
 }
 
-func (tm *TxMsg) Close()  {
+func (tm *TxMsg) Close() {
 	close(tm.scanMsgChan)
 	close(tm.cleanMsgChan)
 	err := tm.nxlock.Close()

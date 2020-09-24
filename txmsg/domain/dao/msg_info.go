@@ -2,9 +2,10 @@ package dao
 
 import (
 	"context"
+
 	"github.com/jukylin/esim/mysql"
-	"gorm.io/gorm"
 	"github.com/jukylin/nx/txmsg/domain/entity"
+	"gorm.io/gorm"
 )
 
 type MsgInfoDao struct {
@@ -41,7 +42,7 @@ func (mid *MsgInfoDao) Create(ctx context.Context,
 }
 
 func (mid *MsgInfoDao) Find(ctx context.Context, squery, wquery interface{},
-		args ...interface{}) (entity.MsgInfo, error) {
+	args ...interface{}) (entity.MsgInfo, error) {
 	var msgInfo entity.MsgInfo
 	db := mid.GetSlaveDb(ctx).Select(squery).
 		Where(wquery, args...).Scan(&msgInfo)
@@ -65,11 +66,10 @@ func (mid *MsgInfoDao) List(ctx context.Context, limit int, squery, wquery inter
 }
 
 func (mid *MsgInfoDao) UpdateWithTx(ctx context.Context, tx *gorm.DB, update map[string]interface{},
-		args ...interface{}) (int64, error) {
+	args ...interface{}) (int64, error) {
 	db := tx.Table("msg_info").Where("id IN ?", args...).Updates(update)
 	return db.RowsAffected, db.Error
 }
-
 
 func (mid *MsgInfoDao) Update(ctx context.Context, update map[string]interface{},
 	args ...interface{}) (int64, error) {

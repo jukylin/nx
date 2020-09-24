@@ -1,18 +1,17 @@
 package repo
 
 import (
-
 	"database/sql"
 	"os"
 
 	"testing"
-	"github.com/ory/dockertest/v3"
-	dc "github.com/ory/dockertest/v3/docker"
+
+	"github.com/jukylin/esim/config"
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/mysql"
-	"github.com/jukylin/esim/config"
+	"github.com/ory/dockertest/v3"
+	dc "github.com/ory/dockertest/v3/docker"
 )
-
 
 var db *sql.DB
 var logger log.Logger
@@ -78,7 +77,7 @@ func TestMain(m *testing.M) {
 			 create_time timestamp not null ,
 			 delay int not null default 0,
 			 PRIMARY KEY (id)
-		)engine=innodb;`,}
+		)engine=innodb;`}
 
 	for _, execSQL := range sqls {
 		res, err := db.Exec(execSQL)
@@ -98,12 +97,12 @@ func TestMain(m *testing.M) {
 		clientOptions.WithDbConfig(
 			[]mysql.DbConfig{
 				mysql.DbConfig{
-					Db:"txmsg",
-					Dsn:"root:123456@tcp(localhost:3306)/txmsg?charset=utf8&parseTime=True&loc=Local",
+					Db:  "txmsg",
+					Dsn: "root:123456@tcp(localhost:3306)/txmsg?charset=utf8&parseTime=True&loc=Local",
 				},
 				mysql.DbConfig{
-					Db:"txmsg_slave",
-					Dsn:"root:123456@tcp(localhost:3306)/txmsg?charset=utf8&parseTime=True&loc=Local",
+					Db:  "txmsg_slave",
+					Dsn: "root:123456@tcp(localhost:3306)/txmsg?charset=utf8&parseTime=True&loc=Local",
 				},
 			},
 		),

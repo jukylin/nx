@@ -2,10 +2,11 @@ package nx_redis
 
 import (
 	"context"
-	"github.com/jukylin/esim/log"
-	"github.com/jukylin/esim/redis"
 	"errors"
 	"time"
+
+	"github.com/jukylin/esim/log"
+	"github.com/jukylin/esim/redis"
 	"github.com/jukylin/nx/nxlock/pkg"
 )
 
@@ -73,17 +74,17 @@ func (rc *Client) Release(ctx context.Context, key string) error {
 }
 
 // 续租
-func (rc *Client) keepAlive(ctx context.Context, key, val string, ttl int64)  {
-	c := time.Tick(time.Duration(ttl / 3) * time.Second)
+func (rc *Client) keepAlive(ctx context.Context, key, val string, ttl int64) {
+	c := time.Tick(time.Duration(ttl/3) * time.Second)
 	for {
 		select {
-			case <- c:
-				err := rc.expire(ctx, key, ttl)
-				if err != nil {
-					rc.logger.Errorc(ctx, "续租失败", err.Error())
-				}
-			case <- ctx.Done():
-				return
+		case <-c:
+			err := rc.expire(ctx, key, ttl)
+			if err != nil {
+				rc.logger.Errorc(ctx, "续租失败", err.Error())
+			}
+		case <-ctx.Done():
+			return
 		}
 	}
 }

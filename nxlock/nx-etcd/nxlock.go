@@ -2,10 +2,11 @@ package nx_etcd
 
 import (
 	"context"
-	"github.com/jukylin/esim/log"
-	"go.etcd.io/etcd/v3/clientv3"
 	"errors"
+
+	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/nxlock/pkg"
+	"go.etcd.io/etcd/v3/clientv3"
 )
 
 type EtcdV3 struct {

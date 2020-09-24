@@ -1,13 +1,15 @@
 package queue
 
 import (
-	"github.com/jukylin/nx/txmsg/domain/entity"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/jukylin/esim/log"
-	"time"
+	"github.com/jukylin/nx/txmsg/domain/entity"
+
 	"os"
+	"time"
+
+	"github.com/jukylin/esim/log"
+	"github.com/stretchr/testify/assert"
 )
 
 var logger log.Logger
@@ -27,18 +29,18 @@ func TestBoundedQueue_Produce(t *testing.T) {
 		msg entity.Msg
 	}
 	tests := []struct {
-		name   string
-		args   args
-		want   bool
+		name string
+		args args
+		want bool
 	}{
-		{"生产1条数据", args{entity.Msg{ID:1}}, true},
+		{"生产1条数据", args{entity.Msg{ID: 1}}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			bq := NewBoundedQueue(
 				WithLogger(logger),
 				WithName("Produce"),
-				WithReportPeriod(100 * time.Millisecond),
+				WithReportPeriod(100*time.Millisecond),
 			)
 			bq.Consumer(func(i interface{}) {
 				assert.Equal(t, int64(1), i.(entity.Msg).ID)
