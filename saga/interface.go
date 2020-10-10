@@ -2,18 +2,11 @@ package saga
 
 import (
 	"context"
+
 	"github.com/jukylin/nx/saga/domain/entity"
 )
 
 const (
-	TranStart = 0
-
-	TranAbort = 1
-
-	TranSucc = 2
-
-	TranFail = 3
-
 	TranContextHeaderName = "txid"
 )
 
@@ -24,7 +17,6 @@ var activeTxIDKey = contextKey{}
 func ContextWithTxID(ctx context.Context, txID uint64) context.Context {
 	return context.WithValue(ctx, activeTxIDKey, txID)
 }
-
 
 func TxIDFromContext(ctx context.Context) uint64 {
 	val := ctx.Value(activeTxIDKey)
@@ -67,37 +59,4 @@ type Saga interface {
 
 type TransactionContext interface {
 	TxID() uint64
-}
-
-type State struct {
-	val int
-}
-
-func NewState(val int) *State {
-	s := &State{}
-	s.val = val
-	return s
-}
-
-func (s *State) Set(val int) {
-	s.val = val
-}
-
-func (s *State) Value() int {
-	return s.val
-}
-
-func (s *State) String() string {
-	switch s.val {
-	case TranStart:
-		return "开始"
-	case TranAbort:
-		return "终止"
-	case TranSucc:
-		return "成功"
-	case TranFail:
-		return "失败"
-	}
-
-	return "未知状态"
 }

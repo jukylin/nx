@@ -53,7 +53,7 @@ func WithConfig(config clientv3.Config) OptionV3 {
 	}
 }
 
-func (e3 *EtcdV3) Lock(ctx context.Context, key, val string, ttl int64) error {
+func (e3 *EtcdV3) Lock(ctx context.Context, key string, ttl int64) error {
 	grResp, err := e3.Client.Grant(ctx, ttl)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (e3 *EtcdV3) Lock(ctx context.Context, key, val string, ttl int64) error {
 	resp, err = e3.Client.Txn(ctx).If(
 		clientv3.Compare(clientv3.CreateRevision(key), "=", 0),
 	).Then(
-		clientv3.OpPut(key, val, clientv3.WithLease(grResp.ID)),
+		clientv3.OpPut(key, "1", clientv3.WithLease(grResp.ID)),
 	).Commit()
 
 	// 锁已经存在，或者网络原因失败，删除合约

@@ -5,7 +5,7 @@ import (
 )
 
 type NxlockSolution interface {
-	Lock(ctx context.Context, key, val string, ttl int64) error
+	Lock(ctx context.Context, key string, ttl int64) error
 
 	Release(ctx context.Context, key string) error
 

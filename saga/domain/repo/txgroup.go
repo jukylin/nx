@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/jukylin/esim/log"
-	"github.com/jukylin/nx/saga/domain/entity"
 	"github.com/jukylin/nx/saga/domain/dao"
+	"github.com/jukylin/nx/saga/domain/entity"
+	value_object "github.com/jukylin/nx/saga/domain/value-object"
 )
 
 type TxgroupRepo interface {
@@ -14,6 +15,9 @@ type TxgroupRepo interface {
 	Create(ctx context.Context, txgroup *entity.Txgroup) error
 
 	SetStateById(ctx context.Context, state int, id int64) error
+
+	// 获取需要补偿的事物组
+	GetCompensateList(ctx context.Context, limit int) ([]entity.Txgroup, error)
 }
 
 type DbTxgroupRepo struct {
@@ -64,4 +68,15 @@ func (dtr *DbTxgroupRepo) SetStateById(ctx context.Context, state int, id int64)
 	}
 
 	return nil
+}
+
+func (dtr *DbTxgroupRepo) GetCompensateList(ctx context.Context, limit int) ([]entity.Txgroup, error) {
+	var err error
+	var txgroup []entity.Txgroup
+	txgroup, err = dtr.txgroupDao.List(ctx, "txid, state, priority", limit, "state = ? and is_deleted = 0", value_object.TranCompensate)
+	if err != nil {
+		return txgroup, err
+	}
+
+	return txgroup, nil
 }

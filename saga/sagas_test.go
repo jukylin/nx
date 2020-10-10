@@ -2,13 +2,14 @@ package saga
 
 import (
 	"context"
-	"testing"
 	"net/http"
+	"testing"
 
-	"github.com/jukylin/nx/saga/domain/repo"
-	"github.com/stretchr/testify/assert"
 	"github.com/jukylin/nx/saga/domain/entity"
+	"github.com/jukylin/nx/saga/domain/repo"
+	value_object "github.com/jukylin/nx/saga/domain/value-object"
 	"github.com/opentracing/opentracing-go"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEsimSagas_StartTransaction(t *testing.T) {
@@ -66,7 +67,7 @@ func TestEsimSaga_StartSaga(t *testing.T) {
 	sage, err := es.CreateSaga(ctx, ts.Context().TxID())
 	if err != nil {
 		logger.Errorc(ctx, err.Error())
-		ts.EndTransaction(ctx, TranFail)
+		ts.EndTransaction(ctx, value_object.TranCompensate)
 		return
 	}
 
@@ -81,14 +82,14 @@ func TestEsimSaga_StartSaga(t *testing.T) {
 	err = sage.StartSaga(ctx, txrecord)
 	if err != nil {
 		logger.Errorc(ctx, err.Error())
-		ts.EndTransaction(ctx, TranFail)
+		ts.EndTransaction(ctx, value_object.TranCompensate)
 		return
 	}
 	// TODO do something
 
 	sage.EndSaga(ctx)
 
-	ts.EndTransaction(ctx, TranSucc)
+	ts.EndTransaction(ctx, value_object.TranEnd)
 }
 
 func TestEsimSaga_Inject_Extract(t *testing.T) {
@@ -109,8 +110,8 @@ func TestEsimSaga_Inject_Extract(t *testing.T) {
 	}
 
 	type args struct {
-		ctx context.Context
-		format interface{}
+		ctx             context.Context
+		format          interface{}
 		abstractCarrier interface{}
 	}
 
@@ -186,5 +187,5 @@ func TestEsimSagas(t *testing.T) {
 	assert.Nil(t, err)
 	defer resp.Body.Close()
 
-	ts.EndTransaction(ctx, TranSucc)
+	ts.EndTransaction(ctx, value_object.TranEnd)
 }

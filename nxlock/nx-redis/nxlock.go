@@ -41,14 +41,14 @@ func WithClient(client *redis.Client) ClientOption {
 	}
 }
 
-func (rc *Client) Lock(ctx context.Context, key, val string, ttl int64) error {
-	err := rc.set(ctx, key, val, ttl)
+func (rc *Client) Lock(ctx context.Context, key string, ttl int64) error {
+	err := rc.set(ctx, key, "1", ttl)
 	if err != nil {
 		rc.logger.Debugc(ctx, err.Error())
 		return err
 	}
 
-	go rc.keepAlive(ctx, key, val, ttl)
+	go rc.keepAlive(ctx, key, ttl)
 
 	return nil
 }
@@ -74,16 +74,18 @@ func (rc *Client) Release(ctx context.Context, key string) error {
 }
 
 // 续租
-func (rc *Client) keepAlive(ctx context.Context, key, val string, ttl int64) {
-	c := time.Tick(time.Duration(ttl/3) * time.Second)
+func (rc *Client) keepAlive(ctx context.Context, key string, ttl int64) {
+	ticker := time.NewTicker(time.Duration(ttl/3) * time.Second)
+
 	for {
 		select {
-		case <-c:
+		case <-ticker.C:
 			err := rc.expire(ctx, key, ttl)
 			if err != nil {
 				rc.logger.Errorc(ctx, "续租失败", err.Error())
 			}
 		case <-ctx.Done():
+			ticker.Stop()
 			return
 		}
 	}

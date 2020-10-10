@@ -42,7 +42,7 @@ func TestEtcdV3_LeaseNotFound(t *testing.T) {
 	etcdv3.(*EtcdV3).Lease = lease
 
 	key := "LeaseNotFound"
-	err := etcdv3.Lock(ctx, key, "1", 10)
+	err := etcdv3.Lock(ctx, key, 10)
 	assert.Error(t, err)
 }
 
@@ -60,7 +60,7 @@ func TestEtcdV3_LockAndRelease(t *testing.T) {
 	ctx := context.Background()
 	key := "LockAndRelease"
 	for i := 0; i < 3; i++ {
-		err := etcdv3.Lock(ctx, key, "1", 10)
+		err := etcdv3.Lock(ctx, key, 10)
 		assert.Nil(t, err)
 		err = etcdv3.Release(ctx, key)
 		assert.Nil(t, err)

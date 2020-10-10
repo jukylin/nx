@@ -75,6 +75,9 @@ type TxMsg struct {
 
 	// 每次补漏多少条
 	limitNum int
+
+	// 定时抢锁时间
+	keepLockTick time.Duration
 }
 
 type Option func(c *TxMsg)
@@ -131,6 +134,10 @@ func NewTxMsg(options ...Option) *TxMsg {
 
 	txMsg.workingTaskWg = &sync.WaitGroup{}
 
+	if txMsg.keepLockTick == 0 {
+		txMsg.keepLockTick = 10 * time.Second
+	}
+
 	return txMsg
 }
 
@@ -161,6 +168,12 @@ func WithTimeWheel(queue queue.LocalQueue) Option {
 func WithRemoteQueue(queue queue.RemoteQueue) Option {
 	return func(tm *TxMsg) {
 		tm.remoteQueue = queue
+	}
+}
+
+func WithkeepLockTick(dur time.Duration) Option {
+	return func(tm *TxMsg) {
+		tm.keepLockTick = dur
 	}
 }
 
@@ -272,30 +285,37 @@ func (tm *TxMsg) buildMessage(ctx context.Context, msgInfo entity.MsgInfo) queue
 
 // 抢锁
 func (tm *TxMsg) keepLockTask(ctx context.Context) {
+	ticker := time.NewTicker(tm.keepLockTick)
+
 	for {
-		err := tm.nxlock.Lock(ctx, TxMsgLock, "1", HoldLockTime)
-		if err != nil {
-			tm.logger.Errorc(ctx, "获取锁失败 %s", err.Error())
-			time.Sleep(10 * time.Second)
-		} else {
-			start := time.Now()
+		select {
+		case <-ticker.C:
+			err := tm.nxlock.Lock(ctx, TxMsgLock, HoldLockTime)
+			if err != nil {
+				tm.logger.Errorc(ctx, "抢锁失败 %s", err.Error())
+			} else {
+				start := time.Now()
 
-			tm.logger.Infoc(ctx, "成功获取锁")
-			tm.workingTaskWg.Add(2)
+				tm.logger.Infoc(ctx, "成功获取锁")
+				tm.workingTaskWg.Add(2)
 
-			tm.cleanMsgChan <- struct{}{}
-			tm.scanMsgChan <- struct{}{}
-			// 等待任务完成
-			// 使用同步方式，不适合执行长时间任务
-			tm.workingTaskWg.Wait()
+				tm.cleanMsgChan <- struct{}{}
+				tm.scanMsgChan <- struct{}{}
+				// 等待任务完成
+				// 使用同步方式，不适合执行长时间任务
+				tm.workingTaskWg.Wait()
 
-			// 任务完成，释放锁
-			tm.nxlock.Release(ctx, TxMsgLock)
+				// 任务完成，释放锁
+				tm.nxlock.Release(ctx, TxMsgLock)
 
-			end := time.Now()
-			lab := prometheus.Labels{}
-			lab["name"] = "keep_lock"
-			taskSecond.With(lab).Set(end.Sub(start).Seconds())
+				end := time.Now()
+				lab := prometheus.Labels{}
+				lab["name"] = "keep_lock"
+				taskSecond.With(lab).Set(end.Sub(start).Seconds())
+			}
+		case <-ctx.Done():
+			ticker.Stop()
+			tm.logger.Infoc(ctx, "抢锁任务退出")
 		}
 	}
 }

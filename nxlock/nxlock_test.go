@@ -10,6 +10,7 @@ import (
 	"github.com/jukylin/esim/config"
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/redis"
+	nx_redis "github.com/jukylin/nx/nxlock/nx-redis"
 	"github.com/jukylin/nx/nxlock/pkg"
 	"github.com/stretchr/testify/assert"
 )
@@ -54,14 +55,14 @@ func TestNxlock_LocalGoroutineLock(t *testing.T) {
 	key := "LocalGoroutineLock"
 	wg.Add(2)
 	go func() {
-		err := nxlock.Lock(ctx, key, "1", 10)
+		err := nxlock.Lock(ctx, key, 10)
 		assert.Nil(t, err)
 		wg.Done()
 	}()
 
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		err := nxlock.Lock(ctx, key, "1", 10)
+		err := nxlock.Lock(ctx, key, 10)
 		assert.Error(t, err)
 		wg.Done()
 	}()
@@ -83,7 +84,7 @@ func TestNxlock_RedisSolution_SimulationMulProcessLock(t *testing.T) {
 			WithSolution(nxRedisClient),
 			WithLogger(logger),
 		)
-		err = e1.Lock(ctx, key, "1", 10)
+		err = e1.Lock(ctx, key, 10)
 		assert.Nil(t, err)
 		wg.Done()
 	}()
@@ -94,7 +95,7 @@ func TestNxlock_RedisSolution_SimulationMulProcessLock(t *testing.T) {
 			WithLogger(logger),
 		)
 		time.Sleep(200 * time.Millisecond)
-		err := e2.Lock(ctx, key, "1", 10)
+		err := e2.Lock(ctx, key, 10)
 		assert.Equal(t, pkg.ErrRedisLockFailure, err.Error())
 		wg.Done()
 	}()

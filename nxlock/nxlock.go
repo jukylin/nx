@@ -59,7 +59,7 @@ func WithRetryLock(retryTime int) Option {
 	}
 }
 
-func (nl *Nxlock) Lock(ctx context.Context, key, val string, ttl int64) error {
+func (nl *Nxlock) Lock(ctx context.Context, key string, ttl int64) error {
 	var err error
 
 	loadVal, ok := nl.holdLock.Load(key)
@@ -70,7 +70,7 @@ func (nl *Nxlock) Lock(ctx context.Context, key, val string, ttl int64) error {
 	// 避免资源挣抢
 	nl.holdLock.Store(key, true)
 	for i := 0; i < nl.retryTime; i++ {
-		err = nl.Solution.Lock(ctx, key, val, ttl)
+		err = nl.Solution.Lock(ctx, key, ttl)
 		if err == nil {
 			return nil
 		}

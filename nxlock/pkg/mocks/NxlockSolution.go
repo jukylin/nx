@@ -27,13 +27,13 @@ func (_m *NxlockSolution) Close() error {
 	return r0
 }
 
-// Lock provides a mock function with given fields: ctx, key, val, ttl
-func (_m *NxlockSolution) Lock(ctx context.Context, key string, val string, ttl int64) error {
-	ret := _m.Called(ctx, key, val, ttl)
+// Lock provides a mock function with given fields: ctx, key, ttl
+func (_m *NxlockSolution) Lock(ctx context.Context, key string, ttl int64) error {
+	ret := _m.Called(ctx, key, ttl)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int64) error); ok {
-		r0 = rf(ctx, key, val, ttl)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64) error); ok {
+		r0 = rf(ctx, key, ttl)
 	} else {
 		r0 = ret.Error(0)
 	}

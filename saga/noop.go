@@ -2,10 +2,11 @@ package saga
 
 import (
 	"context"
+
 	"github.com/jukylin/nx/saga/domain/entity"
 )
 
-type noopSaga struct {}
+type noopSaga struct{}
 
 func (es *noopSaga) StartSaga(ctx context.Context, txrecord entity.Txrecord) error {
 	return nil

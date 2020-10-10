@@ -39,7 +39,7 @@ func TestRedisClient_Lock(t *testing.T) {
 	)
 	ctx := context.Background()
 	key := "TestRedisClient_Lock"
-	err := rclient.Lock(ctx, key, "1", 10)
+	err := rclient.Lock(ctx, key, 10)
 	assert.Nil(t, err)
 	err = rclient.Release(ctx, key)
 	assert.Nil(t, err)

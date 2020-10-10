@@ -2,15 +2,16 @@ package saga
 
 import (
 	"context"
-	"time"
-	"github.com/jukylin/esim/log"
-	"github.com/jukylin/nx/saga/domain/repo"
-	"github.com/sony/sonyflake"
-	"github.com/jukylin/nx/saga/domain/entity"
-	opentracing "github.com/opentracing/opentracing-go"
 	"errors"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/jukylin/esim/log"
+	"github.com/jukylin/nx/saga/domain/entity"
+	"github.com/jukylin/nx/saga/domain/repo"
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/sony/sonyflake"
 )
 
 var (
@@ -40,7 +41,7 @@ func NewEsimSagas(options ...EssOption) Sagas {
 		option(ess)
 	}
 
-	ess.sf = sonyflake.NewSonyflake(sonyflake.Settings{StartTime:time.Now()})
+	ess.sf = sonyflake.NewSonyflake(sonyflake.Settings{StartTime: time.Now()})
 
 	return ess
 }

@@ -73,12 +73,12 @@ func (td *TxgroupDao) Find(ctx context.Context, squery,
 
 // ctx, "id,name", "name = ?", "test"
 // return a max of 10 pieces of data
-func (td *TxgroupDao) List(ctx context.Context, squery,
+func (td *TxgroupDao) List(ctx context.Context, squery string, limit int,
 	wquery interface{}, args ...interface{}) ([]entity.Txgroup, error) {
 	txgroups := make([]entity.Txgroup, 0)
 	db := td.GetSlaveDb(ctx).Select(squery).
-		Where(wquery, args...).Limit(10).Find(&txgroups)
-	if db.Error != nil {
+		Where(wquery, args...).Limit(limit).Order("rand()").Find(&txgroups)
+	if db.Error != nil && db.Error != gorm.ErrRecordNotFound {
 		return txgroups, db.Error
 	} else {
 		return txgroups, nil
