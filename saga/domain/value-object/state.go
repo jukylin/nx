@@ -12,6 +12,12 @@ const (
 
 	// 补偿完成
 	TranCompensateFinish = 3
+
+	TranSportHTTP = 1
+
+	TranSportGRPC = 2
+
+	TranSportDubbo = 3
 )
 
 type State struct {

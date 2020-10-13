@@ -110,8 +110,14 @@ func (td *TxgroupDao) DelById(ctx context.Context,
 // return RowsAffected, error
 func (td *TxgroupDao) Update(ctx context.Context,
 	update map[string]interface{}, query interface{}, args ...interface{}) (int64, error) {
-
-	db := td.GetDb(ctx).Where(query, args).
+	dbRes := td.GetDb(ctx).Where(query, args).
 		Updates(update)
-	return db.RowsAffected, db.Error
+	return dbRes.RowsAffected, dbRes.Error
+}
+
+func (td *TxgroupDao) UpdateByTran(ctx context.Context,
+	tx *gorm.DB, txgroup entity.Txgroup, query interface{}, args ...interface{}) (int64, error) {
+	dbRes := tx.Table("txgroup").Where(query, args).
+		Updates(txgroup)
+	return dbRes.RowsAffected, dbRes.Error
 }

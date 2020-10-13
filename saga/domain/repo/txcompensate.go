@@ -6,10 +6,15 @@ import (
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/saga/domain/dao"
 	"github.com/jukylin/nx/saga/domain/entity"
+	"gorm.io/gorm"
 )
 
 type TxcompensateRepo interface {
-	FindById(context.Context, int64) entity.Txcompensate
+	FindByTxID(context.Context, uint64) entity.Txcompensate
+
+	InsertUpdateFromRecord(context.Context, *gorm.DB, uint64) error
+
+	ListByTxID(context.Context, uint64) []entity.Txcompensate
 }
 
 type DbTxcompensateRepo struct {
@@ -30,14 +35,32 @@ func NewDbTxcompensateRepo(logger log.Logger) TxcompensateRepo {
 	return dtr
 }
 
-func (dtr *DbTxcompensateRepo) FindById(ctx context.Context, id int64) entity.Txcompensate {
+func (dtr *DbTxcompensateRepo) FindByTxID(ctx context.Context, txID uint64) entity.Txcompensate {
 	var txcompensate entity.Txcompensate
 	var err error
 
-	txcompensate, err = dtr.txcompensateDao.Find(ctx, "*", "id = ? and is_deleted = ?", id, 0)
-	if err != nil {
+	txcompensate, err = dtr.txcompensateDao.Find(ctx, "*", "txid = ? and is_deleted = ?", txID, 0)
+	if err != nil && err != gorm.ErrRecordNotFound{
 		dtr.logger.Errorc(ctx, err.Error())
 	}
 
 	return txcompensate
 }
+
+func (dtr *DbTxcompensateRepo) InsertUpdateFromRecord(ctx context.Context, tx *gorm.DB, txID uint64) error {
+	_, err := dtr.txcompensateDao.InsertUpdateFromRecord(ctx, tx, txID)
+	return err
+}
+
+func (dtr *DbTxcompensateRepo) ListByTxID(ctx context.Context, txID uint64) []entity.Txcompensate {
+	var txcompensates []entity.Txcompensate
+	var err error
+
+	txcompensates, err = dtr.txcompensateDao.List(ctx, "*", 20, "txid = ? and is_deleted = ? and success = 0", txID, 0)
+	if err != nil && err != gorm.ErrRecordNotFound{
+		dtr.logger.Errorc(ctx, err.Error())
+	}
+
+	return txcompensates
+}
+

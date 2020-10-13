@@ -1,4 +1,4 @@
-package docker_test
+package docker_t
 
 import (
 	"database/sql"
@@ -8,20 +8,37 @@ import (
 	dc "github.com/ory/dockertest/v3/docker"
 )
 
-type MysqlDockerTest struct {
+type DockerTest struct {
 	pool *dockertest.Pool
 
-	resource *dockertest.Resource
+	logger log.Logger
 
 	db *sql.DB
+
+	mysqlResource *dockertest.Resource
+
+	redisResource *dockertest.Resource
+
+	expire uint
 }
 
-func (mdt *MysqlDockerTest) InitMysql(logger log.Logger) {
+func NewDockerTest(logger log.Logger, expire uint) *DockerTest {
+	dt := &DockerTest{}
+	dt.logger = logger
+
+	dt.expire = expire
 	var err error
-	mdt.pool, err = dockertest.NewPool("")
+
+	dt.pool, err = dockertest.NewPool("")
 	if err != nil {
 		logger.Fatalf("Could not connect to docker: %s", err)
 	}
+
+	return dt
+}
+
+func (dt *DockerTest) RunMysql() {
+	var err error
 
 	opt := &dockertest.RunOptions{
 		Repository: "mysql",
@@ -30,32 +47,32 @@ func (mdt *MysqlDockerTest) InitMysql(logger log.Logger) {
 	}
 
 	// pulls an image, creates a container based on it and runs it
-	mdt.resource, err = mdt.pool.RunWithOptions(opt, func(hostConfig *dc.HostConfig) {
+	dt.mysqlResource, err = dt.pool.RunWithOptions(opt, func(hostConfig *dc.HostConfig) {
 		hostConfig.PortBindings = map[dc.Port][]dc.PortBinding{
 			"3306/tcp": {{HostIP: "", HostPort: "3306"}},
 		}
 	})
 	if err != nil {
-		logger.Fatalf("Could not start resource: %s", err.Error())
+		dt.logger.Fatalf("Could not start resource: %s", err.Error())
 	}
 
-	err = mdt.resource.Expire(150)
+	err = dt.mysqlResource.Expire(dt.expire)
 	if err != nil {
-		logger.Fatalf(err.Error())
+		dt.logger.Fatalf(err.Error())
 	}
 
-	if err := mdt.pool.Retry(func() error {
+	if err := dt.pool.Retry(func() error {
 		var err error
-		mdt.db, err = sql.Open("mysql",
+		dt.db, err = sql.Open("mysql",
 			"root:123456@tcp(localhost:3306)/mysql?charset=utf8&parseTime=True&loc=Local")
 		if err != nil {
 			return err
 		}
-		mdt.db.SetMaxOpenConns(100)
+		dt.db.SetMaxOpenConns(100)
 
-		return mdt.db.Ping()
+		return dt.db.Ping()
 	}); err != nil {
-		logger.Fatalf("Could not connect to docker: %s", err)
+		dt.logger.Fatalf("Could not connect to docker: %s", err)
 	}
 
 	sqls := []string{
@@ -106,20 +123,51 @@ func (mdt *MysqlDockerTest) InitMysql(logger log.Logger) {
 	}
 
 	for _, execSQL := range sqls {
-		res, err := mdt.db.Exec(execSQL)
+		res, err := dt.db.Exec(execSQL)
 		if err != nil {
-			logger.Errorf(err.Error())
+			dt.logger.Errorf(err.Error())
 		}
 		_, err = res.RowsAffected()
 		if err != nil {
-			logger.Errorf(err.Error())
+			dt.logger.Errorf(err.Error())
 		}
 	}
 }
 
-func (mdt *MysqlDockerTest) Close(logger log.Logger) {
-	if err := mdt.pool.Purge(mdt.resource); err != nil {
-		logger.Fatalf("Could not purge resource: %s", err)
+func (dt *DockerTest) RunReids() {
+	var err error
+
+	opt := &dockertest.RunOptions{
+		Repository: "redis",
+		Tag:        "latest",
 	}
-	mdt.db.Close()
+
+	dt.redisResource, err = dt.pool.RunWithOptions(opt, func(hostConfig *dc.HostConfig) {
+		hostConfig.PortBindings = map[dc.Port][]dc.PortBinding{
+			"6379/tcp": {{HostIP: "", HostPort: "6379"}},
+		}
+	})
+	if err != nil {
+		dt.logger.Fatalf("Could not start resource: %s", err.Error())
+	}
+
+	err = dt.redisResource.Expire(dt.expire)
+	if err != nil {
+		dt.logger.Fatalf(err.Error())
+	}
+}
+
+func (dt *DockerTest) Close() {
+	if dt.mysqlResource != nil {
+		if err := dt.pool.Purge(dt.mysqlResource); err != nil {
+			dt.logger.Fatalf("Could not purge resource: %s", err)
+		}
+		dt.db.Close()
+	}
+
+	if dt.redisResource != nil {
+		if err := dt.pool.Purge(dt.redisResource); err != nil {
+			dt.logger.Fatalf("Could not purge resource: %s", err)
+		}
+	}
 }

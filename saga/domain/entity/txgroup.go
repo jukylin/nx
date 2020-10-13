@@ -13,7 +13,7 @@ type Txgroup struct {
 
 	Priority int `gorm:"column:priority"`
 
-	// 事物状态 0 开始 1 中断 2 成功 3 失败
+	// 0 开始 1 结束 2 补偿 3 补偿完成
 	State int `gorm:"column:state"`
 
 	Txid uint64 `gorm:"column:txid"`

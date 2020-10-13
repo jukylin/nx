@@ -44,8 +44,8 @@ func TestMain(m *testing.M) {
 
 	conf = config.NewMemConfig()
 	conf.Set("debug", true)
-	mdt := docker_test.MysqlDockerTest{}
-	mdt.InitMysql(logger)
+	dt := docker_test.NewDockerTest(logger, 100)
+	dt.RunMysql()
 
 	clientOptions := mysql.ClientOptions{}
 	mysqlClient = mysql.NewClient(
@@ -95,7 +95,7 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	mdt.Close(logger)
+	dt.Close()
 	//mysqlClient.Close()
 	// You can't defer this because os.Exit doesn't care for defer
 	os.Exit(code)
@@ -177,7 +177,7 @@ func index1(w http.ResponseWriter, r *http.Request) {
 }
 
 func compensate1(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello golang http!")
+	fmt.Fprintf(w, "Hello compensate1!")
 }
 
 func index2(w http.ResponseWriter, r *http.Request) {
@@ -220,5 +220,5 @@ func index2(w http.ResponseWriter, r *http.Request) {
 }
 
 func compensate2(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello golang http!")
+	fmt.Fprintf(w, "Hello compensate2!")
 }

@@ -73,11 +73,11 @@ func (td *TxcompensateDao) Find(ctx context.Context, squery,
 
 // ctx, "id,name", "name = ?", "test"
 // return a max of 10 pieces of data
-func (td *TxcompensateDao) List(ctx context.Context, squery,
+func (td *TxcompensateDao) List(ctx context.Context, squery string, limit int,
 	wquery interface{}, args ...interface{}) ([]entity.Txcompensate, error) {
 	txcompensates := make([]entity.Txcompensate, 0)
 	db := td.GetSlaveDb(ctx).Select(squery).
-		Where(wquery, args...).Limit(10).Find(&txcompensates)
+		Where(wquery, args...).Order("create_time asc").Limit(limit).Find(&txcompensates)
 	if db.Error != nil {
 		return txcompensates, db.Error
 	} else {
@@ -114,4 +114,10 @@ func (td *TxcompensateDao) Update(ctx context.Context,
 	db := td.GetDb(ctx).Where(query, args).
 		Updates(update)
 	return db.RowsAffected, db.Error
+}
+
+func (td *TxcompensateDao) InsertUpdateFromRecord(ctx context.Context, tx *gorm.DB, txID uint64) (int64, error) {
+	resDb := tx.Exec("insert into txcompensate(txid, id, success, create_time, update_time, step) " +
+		"SELECT txid, id, 0, NOW(), NOW(), step FROM txrecord where txid = ?", txID)
+	return resDb.RowsAffected, resDb.Error
 }
