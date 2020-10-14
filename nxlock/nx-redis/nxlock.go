@@ -82,7 +82,7 @@ func (rc *Client) keepAlive(ctx context.Context, key string, ttl int64) {
 		case <-ticker.C:
 			err := rc.expire(ctx, key, ttl)
 			if err != nil {
-				rc.logger.Errorc(ctx, "续租失败", err.Error())
+				rc.logger.Errorc(ctx, "续租失败 %s", err.Error())
 			}
 		case <-ctx.Done():
 			ticker.Stop()

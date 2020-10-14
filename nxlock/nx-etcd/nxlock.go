@@ -87,7 +87,7 @@ func (e3 *EtcdV3) Lock(ctx context.Context, key string, ttl int64) error {
 
 func (e3 *EtcdV3) Release(ctx context.Context, key string) error {
 	resp, err := e3.Client.Delete(ctx, key)
-	e3.logger.Debugc(ctx, "Release %s : %+v", key, resp)
+	e3.logger.Debugc(ctx, "Release %s : %+v.", key, resp)
 	return err
 }
 
@@ -104,7 +104,7 @@ func (e3 *EtcdV3) keepAlive(ctx context.Context, leaseID clientv3.LeaseID) error
 			case resp, ok := <-kaResp:
 				if ok {
 					if resp != nil {
-						e3.logger.Errorc(ctx, "keepAlive %d : %+v", leaseID, resp)
+						e3.logger.Errorc(ctx, "KeepAlive %d : %+v.", leaseID, resp)
 					}
 				} else {
 					e3.logger.Errorc(ctx, "LeaseKeepAlive %d is close.", leaseID)

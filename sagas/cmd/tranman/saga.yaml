@@ -1,0 +1,41 @@
+appname : tranman
+debug : '${DEBUG}'
+
+#服务端
+grpc_server_tcp : 50055
+grpc_server_kp_time : 60
+grpc_server_kp_time_out : 5
+#链接超时
+grpc_server_conn_time_out : 3
+
+
+#mysql
+dbs:
+- {db: 'sagas', dsn: '${SAGA_MYSQL_USERNAME}:${SAGA_MYSQL_PASSWORD}@tcp(${SAGA_MYSQL_MASTER_HOST}:${SAGA_MYSQL_PORT})/sagas?charset=utf8&parseTime=True&loc=Local',
+  maxidle: 10, maxopen: 100}
+- {db: 'sagas_slave', dsn: '${SAGA_MYSQL_USERNAME}:${SAGA_MYSQL_PASSWORD}@tcp(${SAGA_MYSQL_SLAVE_HOST}:${SAGA_MYSQL_PORT})/sagas?charset=utf8&parseTime=True&loc=Local',
+  maxidle: 10, maxopen: 100}
+
+# http请求 单位：s
+http_client_time_out : 3
+
+
+#redis
+redis_max_active : 500
+redis_max_idle : 100
+redis_idle_time_out : 1
+redis_host : '${SAGA_REDIS__HOST}'
+redis_post : '${SAGA_REDIS_PORT}'
+redis_password : '${SAGA_REDIS_PASSWORD}'
+
+#redis 读超时 单位：ms
+redis_read_time_out : 500
+#redis 写超时 单位：ms
+redis_write_time_out : 500
+#redis 连接超时 单位：ms
+redis_conn_time_out : 500
+
+
+#prometheus http addr
+prometheus_http_addr : 9002
+
