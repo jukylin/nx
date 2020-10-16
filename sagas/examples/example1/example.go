@@ -156,6 +156,7 @@ func index1(w http.ResponseWriter, r *http.Request) {
 	txrecord.Host = "http://127.0.0.1:8081"
 	txrecord.Path = "/compensate1"
 	txrecord.Params = `{"hello":"saga1"}`
+	txrecord.TransportType = value_object.TranSportHTTP
 
 	req, err := http.NewRequest("Get", "http://127.0.0.1:8082/index", nil)
 	if err != nil {
@@ -207,6 +208,7 @@ func index2(w http.ResponseWriter, r *http.Request) {
 	txrecord.Path = "/compensate"
 	txrecord.Params = `{"hello":"saga2"}`
 	txrecord.Txid = tc.TxID()
+	txrecord.TransportType = value_object.TranSportHTTP
 
 	err = saga.StartSaga(ctx, txrecord)
 	if err != nil {
@@ -264,6 +266,7 @@ func index3(w http.ResponseWriter, r *http.Request) {
 	txrecord.Path = "/compensate"
 	txrecord.Params = `{"hello":"saga3"}`
 	txrecord.Txid = tc.TxID()
+	txrecord.TransportType = value_object.TranSportHTTP
 
 	err = saga.StartSaga(ctx, txrecord)
 	if err != nil {
@@ -321,6 +324,7 @@ func index4(w http.ResponseWriter, r *http.Request) {
 	txrecord.Path = "/compensate"
 	txrecord.Params = `{"hello":"saga4"}`
 	txrecord.Txid = tc.TxID()
+	txrecord.TransportType = value_object.TranSportHTTP
 
 	err = saga.StartSaga(ctx, txrecord)
 	if err != nil {

@@ -188,7 +188,7 @@ func (tm *TransactionManager) buildCompensate(ctx context.Context) {
 		case <-ticker.C:
 			err = tm.nxlock.Lock(ctx, SagasCompensateBuild, 3)
 			if err == nil {
-				txgroups, err := tm.txgroupRepo.GetUnfishedTransactionGroup(context.Background(), 3600)
+				txgroups, err := tm.txgroupRepo.GetUnfishedTransactionGroup(context.Background(), 3)
 				if err != nil {
 					tm.logger.Errorc(ctx, err.Error())
 				} else {
@@ -221,7 +221,10 @@ func (tm *TransactionManager) execCompensate(item interface{}) {
 	err := tm.nxlock.Lock(ctx, fmt.Sprintf("%s:%d", SagasCompensateExec, txgroup.Txid), 10)
 	if err == nil {
 		tm.logger.Infof("Exec compensate txID %d", txgroup.Txid)
-		tm.compensate.ExeCompensate(ctx, txgroup)
+		err = tm.compensate.ExeCompensate(ctx, txgroup)
+		if err != nil {
+			tm.logger.Errorc(ctx, err.Error())
+		}
 	} else {
 		tm.logger.Errorc(ctx, err.Error())
 	}

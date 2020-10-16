@@ -90,7 +90,7 @@ func (dtr *DbTxgroupRepo) SetStateWithTx(ctx context.Context, tx *gorm.DB, state
 func (dtr *DbTxgroupRepo) GetCompensateList(ctx context.Context, limit int) ([]entity.Txgroup, error) {
 	var err error
 	var txgroup []entity.Txgroup
-	txgroup, err = dtr.txgroupDao.List(ctx, "txid, state, priority", limit, "state = ? and is_deleted = 0", value_object.TranCompensate)
+	txgroup, err = dtr.txgroupDao.List(ctx, "id, txid, state, priority", limit, "state = ? and is_deleted = 0", value_object.TranCompensate)
 	if err != nil {
 		return txgroup, err
 	}
@@ -101,7 +101,7 @@ func (dtr *DbTxgroupRepo) GetCompensateList(ctx context.Context, limit int) ([]e
 func (dtr *DbTxgroupRepo) GetUnfishedTransactionGroup(ctx context.Context, intervals int) ([]entity.Txgroup, error) {
 	var err error
 	var txgroup []entity.Txgroup
-	txgroup, err = dtr.txgroupDao.List(ctx, "txid, state, priority", 1000,
+	txgroup, err = dtr.txgroupDao.List(ctx, "id, txid, state, priority", 1000,
 		"state = ? and is_deleted = 0 and create_time < ?", value_object.TranStart,
 			time.Now().Add(- time.Duration(intervals) * time.Second))
 	if err != nil {

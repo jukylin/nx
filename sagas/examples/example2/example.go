@@ -36,7 +36,7 @@ func main()  {
 			logger.Errorf(err.Error())
 		} else {
 			logger.Infof("txID %s", string(body))
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 			txgroupRepo := repo.NewDbTxgroupRepo(logger)
 
 			ctx := context.Background()
@@ -120,7 +120,7 @@ func index1(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Errorc(r.Context(), err.Error())
 	}
-println(tran.Context().TxID())
+
 	ctx := sagas.ContextWithTxID(r.Context(), tran.Context().TxID())
 
 	req, err := http.NewRequest("Get", "http://127.0.0.1:8082/index", nil)
@@ -177,6 +177,7 @@ func index2(w http.ResponseWriter, r *http.Request) {
 	}
 
 	txrecord := entity.Txrecord{}
+	txrecord.TransportType = value_object.TranSportHTTP
 	txrecord.Host = "http://127.0.0.1:8082"
 	txrecord.Path = "/compensate"
 	txrecord.Params = `{"hello":"saga2"}`

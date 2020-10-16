@@ -101,7 +101,8 @@ func (rc *Client) keepAlive(ctx context.Context, key string, ttl int64) {
 			}
 		case _, ok := <-rc.keepAliveKey[key]:
 			if !ok {
-				rc.logger.Infoc(ctx, "关闭续租 %s", key)
+				rc.logger.Infoc(ctx, "Nxredis keepAlive 关闭续租 %s", key)
+				return
 			}
 		case <-ctx.Done():
 			ticker.Stop()

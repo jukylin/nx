@@ -68,7 +68,6 @@ func (nl *Nxlock) Lock(ctx context.Context, key string, ttl int64) error {
 	if loaded {
 		return fmt.Errorf(pkg.ErrAlreadyAcquiredLock, key)
 	}
-	// defer nl.holdLock.Delete(key)
 
 	for i := 0; i < nl.retryTime; i++ {
 		err = nl.Solution.Lock(ctx, key, ttl)

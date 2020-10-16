@@ -98,6 +98,12 @@ func WithBcLogger(logger log.Logger) BcOption {
 	}
 }
 
+func WithBcTransportFactory(tf *TransportFactory) BcOption {
+	return func(bc *backwardCompensate) {
+		bc.tf = tf
+	}
+}
+
 // 获取事物组里需要补偿的事物，进行补偿
 func (bc *backwardCompensate) ExeCompensate(ctx context.Context, txgroup entity.Txgroup) error {
 	if txgroup.IsEmpty() {
@@ -174,7 +180,7 @@ func (bc *backwardCompensate) CompensateRecord(ctx context.Context, txcompensate
 
 	ts, err := bc.tf.GetTransport(txrecord.TransportType)
 	if err != nil {
-		bc.logger.Errorc(ctx, "GetTransport %s", err.Error())
+		return err
 	}
 
 	err = ts.Invoke(ctx, txrecord)

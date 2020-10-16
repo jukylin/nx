@@ -12,6 +12,7 @@ import (
 	"github.com/jukylin/esim/redis"
 	"github.com/jukylin/nx/sagas/domain/repo"
 	"github.com/jukylin/esim/mysql"
+	"github.com/jukylin/esim/http"
 	"context"
 	"os/signal"
 	"syscall"
@@ -49,6 +50,8 @@ var rootCmd = &cobra.Command{
 			log.WithDebug(conf.GetBool("debug")),
 		)
 
+		tracer := &opentracing.NoopTracer{}
+
 		// 初始化分布式事物锁
 		redisClientOptions := redis.ClientOptions{}
 		redisClient := redis.NewClient(
@@ -59,7 +62,7 @@ var rootCmd = &cobra.Command{
 				return redis.NewMonitorProxy(
 					monitorProxyOptions.WithLogger(logger),
 					monitorProxyOptions.WithConf(conf),
-					monitorProxyOptions.WithTracer(&opentracing.NoopTracer{}),
+					monitorProxyOptions.WithTracer(tracer),
 				)
 			}),
 		)
@@ -85,7 +88,7 @@ var rootCmd = &cobra.Command{
 					return mysql.NewMonitorProxy(
 						monitorProxyOptions.WithLogger(logger),
 						monitorProxyOptions.WithConf(conf),
-						monitorProxyOptions.WithTracer(&opentracing.NoopTracer{}),
+						monitorProxyOptions.WithTracer(tracer),
 					)
 				},
 			),
@@ -95,6 +98,26 @@ var rootCmd = &cobra.Command{
 		txrecordRepo := repo.NewDbTxrecordRepo(logger)
 		txcompensateRepo := repo.NewDbTxcompensateRepo(logger)
 
+		httpClientOptions := http.ClientOptions{}
+		httpClient := http.NewClient(
+			httpClientOptions.WithLogger(logger),
+			httpClientOptions.WithProxy(
+				func() interface{} {
+					monitorProxyOptions := http.MonitorProxyOptions{}
+					return http.NewMonitorProxy(
+						monitorProxyOptions.WithLogger(logger),
+						monitorProxyOptions.WithConf(conf),
+						monitorProxyOptions.WithTracer(tracer),
+					)
+				},
+			),
+		)
+
+		tf := transactionmanager.NewTransportFactory(
+			transactionmanager.WithTfLogger(logger),
+			transactionmanager.WithTfHTTPClient(httpClient),
+		)
+
 		// 逆向补偿
 		backwardCompensate := transactionmanager.NewBackwardCompensate(
 			transactionmanager.WithBcLogger(logger),
@@ -102,6 +125,7 @@ var rootCmd = &cobra.Command{
 			transactionmanager.WithBcTxgroupRepo(txgroupRepo),
 			transactionmanager.WithBcTxrecordRepo(txrecordRepo),
 			transactionmanager.WithBcTxcompensateRepo(txcompensateRepo),
+			transactionmanager.WithBcTransportFactory(tf),
 		)
 
 		// TM 初始化
