@@ -36,20 +36,14 @@ func main()  {
 			logger.Errorf(err.Error())
 		} else {
 			logger.Infof("txID %s", string(body))
-
+			time.Sleep(2 * time.Second)
 			txgroupRepo := repo.NewDbTxgroupRepo(logger)
-			txrecordRepo := repo.NewDbTxrecordRepo(logger)
 
 			ctx := context.Background()
 			txID, _ := strconv.ParseUint(string(body), 10, 64)
 			txgroup := txgroupRepo.FindByTxID(ctx, txID)
-			if txgroup.State != value_object.TranEnd {
-				logger.Errorf("事物未完成 %s", string(body))
-			}
-
-			c, _ := txrecordRepo.CountByTxID(ctx, txID)
-			if c != 3 {
-				logger.Errorf("补偿记录不对 %d", c)
+			if txgroup.State != value_object.TranCompensateFinish {
+				logger.Errorf("事物没有补偿完成 %s %d", string(body), txgroup.State)
 			}
 		}
 	}
@@ -110,29 +104,6 @@ func InitHttpServer() {
 			logger.Fatalf("ListenAndServe: ", err)
 		}
 	}()
-
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/index", index3)
-		mux.HandleFunc("/compensate", compensate3)
-
-		err := http.ListenAndServe(":8083", mux)
-		if err != nil {
-			logger.Fatalf("ListenAndServe: ", err)
-		}
-	}()
-
-
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/index", index4)
-		mux.HandleFunc("/compensate", compensate4)
-
-		err := http.ListenAndServe(":8084", mux)
-		if err != nil {
-			logger.Fatalf("ListenAndServe: ", err)
-		}
-	}()
 }
 
 func index1(w http.ResponseWriter, r *http.Request) {
@@ -149,13 +120,8 @@ func index1(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Errorc(r.Context(), err.Error())
 	}
-
+println(tran.Context().TxID())
 	ctx := sagas.ContextWithTxID(r.Context(), tran.Context().TxID())
-
-	txrecord := entity.Txrecord{}
-	txrecord.Host = "http://127.0.0.1:8081"
-	txrecord.Path = "/compensate1"
-	txrecord.Params = `{"hello":"saga1"}`
 
 	req, err := http.NewRequest("Get", "http://127.0.0.1:8082/index", nil)
 	if err != nil {
@@ -169,10 +135,18 @@ func index1(w http.ResponseWriter, r *http.Request) {
 		logger.Errorc(ctx, err.Error())
 	}
 	defer resp.Body.Close()
-
-	tran.EndTransaction(ctx)
-
-	fmt.Fprintf(w, "%d", tran.Context().TxID())
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.Errorc(ctx, err.Error())
+	}
+	if string(body) == "error" {
+		logger.Errorc(ctx, "业务出错")
+		fmt.Fprintf(w, "%d", tran.Context().TxID())
+	} else {
+		tran.EndTransaction(ctx)
+		logger.Errorc(ctx, "事物完成")
+		fmt.Fprintf(w, "%d", tran.Context().TxID())
+	}
 }
 
 func compensate1(w http.ResponseWriter, r *http.Request) {
@@ -213,18 +187,8 @@ func index2(w http.ResponseWriter, r *http.Request) {
 		logger.Errorc(ctx, err.Error())
 	}
 
-	req, err := http.NewRequest("Get", "http://127.0.0.1:8083/index", nil)
-	if err != nil {
-		logger.Errorc(ctx, err.Error())
-	}
-	carrier := opentracing.HTTPHeadersCarrier(req.Header)
-	es.Inject(ctx, opentracing.HTTPHeaders, carrier)
-	client := http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Errorc(ctx, err.Error())
-	}
-	defer resp.Body.Close()
+	fmt.Fprintf(w, "error")
+	return
 
 	saga.EndSaga(ctx)
 
@@ -233,108 +197,4 @@ func index2(w http.ResponseWriter, r *http.Request) {
 
 func compensate2(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello compensate2!")
-}
-
-
-func index3(w http.ResponseWriter, r *http.Request) {
-	txgroupRepo := repo.NewDbTxgroupRepo(logger)
-	txrecordRepo := repo.NewDbTxrecordRepo(logger)
-
-	es := sagas.NewEsimSagas(
-		sagas.WithEssLogger(logger),
-		sagas.WithEssTxgroupRepo(txgroupRepo),
-		sagas.WithEssTxrecordRepo(txrecordRepo),
-	)
-
-	extractCarrier := opentracing.HTTPHeadersCarrier(r.Header)
-	tc, err := es.Extract(r.Context(), opentracing.HTTPHeaders, extractCarrier)
-	if err != nil {
-		logger.Errorc(r.Context(), err.Error())
-	}
-
-	ctx := sagas.ContextWithTxID(r.Context(), tc.TxID())
-
-	saga, err := es.CreateSaga(ctx, tc.TxID())
-	if err != nil {
-		logger.Errorc(ctx, err.Error())
-	}
-
-	txrecord := entity.Txrecord{}
-	txrecord.Host = "http://127.0.0.1:8083"
-	txrecord.Path = "/compensate"
-	txrecord.Params = `{"hello":"saga3"}`
-	txrecord.Txid = tc.TxID()
-
-	err = saga.StartSaga(ctx, txrecord)
-	if err != nil {
-		logger.Errorc(ctx, err.Error())
-	}
-
-	req, err := http.NewRequest("Get", "http://127.0.0.1:8084/index", nil)
-	if err != nil {
-		logger.Errorc(ctx, err.Error())
-	}
-	carrier := opentracing.HTTPHeadersCarrier(req.Header)
-	es.Inject(ctx, opentracing.HTTPHeaders, carrier)
-	client := http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Errorc(ctx, err.Error())
-	}
-	defer resp.Body.Close()
-
-	saga.EndSaga(ctx)
-
-	fmt.Fprintf(w, "Hello saga3")
-}
-
-func compensate3(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello compensate2!")
-}
-
-
-func index4(w http.ResponseWriter, r *http.Request) {
-	txgroupRepo := repo.NewDbTxgroupRepo(logger)
-	txrecordRepo := repo.NewDbTxrecordRepo(logger)
-
-	es := sagas.NewEsimSagas(
-		sagas.WithEssLogger(logger),
-		sagas.WithEssTxgroupRepo(txgroupRepo),
-		sagas.WithEssTxrecordRepo(txrecordRepo),
-	)
-
-	extractCarrier := opentracing.HTTPHeadersCarrier(r.Header)
-	tc, err := es.Extract(r.Context(), opentracing.HTTPHeaders, extractCarrier)
-	if err != nil {
-		logger.Errorc(r.Context(), err.Error())
-	}
-
-	ctx := sagas.ContextWithTxID(r.Context(), tc.TxID())
-
-	saga, err := es.CreateSaga(ctx, tc.TxID())
-	if err != nil {
-		logger.Errorc(ctx, err.Error())
-	}
-
-	txrecord := entity.Txrecord{}
-	txrecord.Host = "http://127.0.0.1:8084"
-	txrecord.Path = "/compensate"
-	txrecord.Params = `{"hello":"saga4"}`
-	txrecord.Txid = tc.TxID()
-
-	err = saga.StartSaga(ctx, txrecord)
-	if err != nil {
-		logger.Errorc(ctx, err.Error())
-	}
-
-	// TODO do something
-	time.Sleep(100 * time.Millisecond)
-
-	saga.EndSaga(ctx)
-
-	fmt.Fprintf(w, "Hello saga4")
-}
-
-func compensate4(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello compensate4!")
 }

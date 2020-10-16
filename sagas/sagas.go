@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/sagas/domain/entity"
@@ -41,7 +40,7 @@ func NewEsimSagas(options ...EssOption) Sagas {
 		option(ess)
 	}
 
-	ess.sf = sonyflake.NewSonyflake(sonyflake.Settings{StartTime: time.Now()})
+	ess.sf = sonyflake.NewSonyflake(sonyflake.Settings{})
 
 	return ess
 }

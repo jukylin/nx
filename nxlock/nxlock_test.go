@@ -32,6 +32,15 @@ func TestMain(m *testing.M) {
 	redisClient = redis.NewClient(
 		clientOptions.WithLogger(logger),
 		clientOptions.WithConf(conf),
+		clientOptions.WithProxy(
+			func() interface{} {
+				monitorProxyOptions := redis.MonitorProxyOptions{}
+				return redis.NewMonitorProxy(
+					monitorProxyOptions.WithLogger(logger),
+					monitorProxyOptions.WithConf(conf),
+				)
+			},
+		),
 	)
 
 	nxRedisClient = nx_redis.NewClient(
@@ -64,6 +73,7 @@ func TestNxlock_LocalGoroutineLock(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		err := nxlock.Lock(ctx, key, 10)
 		assert.Error(t, err)
+		logger.Debugc(ctx, err.Error())
 		wg.Done()
 	}()
 	wg.Wait()

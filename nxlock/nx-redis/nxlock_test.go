@@ -49,3 +49,34 @@ func TestRedisClient_Lock(t *testing.T) {
 	assert.Nil(t, nil)
 	assert.False(t, res)
 }
+
+
+
+func TestRedisClient_keepAliveKey(t *testing.T) {
+	clientOptions := redis.ClientOptions{}
+	client := redis.NewClient(
+		clientOptions.WithLogger(logger),
+		clientOptions.WithConf(conf),
+	)
+
+	rclient := NewClient(
+		WithLogger(logger),
+		WithClient(client),
+	)
+	ctx := context.Background()
+	key := "TestRedisClient_keepAliveKey"
+	err := rclient.Lock(ctx, key, 10)
+	assert.Nil(t, err)
+	_, ok := rclient.(*Client).keepAliveKey[key];
+	assert.True(t, ok)
+
+	err = rclient.Release(ctx, key)
+	assert.Nil(t, err)
+	_, ok = rclient.(*Client).keepAliveKey[key];
+	assert.False(t, ok)
+
+	conn := client.GetCtxRedisConn()
+	res, nil := redis.Bool(conn.Do(context.Background(), "exists", key))
+	assert.Nil(t, nil)
+	assert.False(t, res)
+}

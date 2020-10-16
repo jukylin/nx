@@ -16,6 +16,7 @@ import (
 	"os/signal"
 	"syscall"
 	"github.com/jukylin/esim/config"
+	"github.com/opentracing/opentracing-go"
 )
 
 var logger log.Logger
@@ -58,6 +59,7 @@ var rootCmd = &cobra.Command{
 				return redis.NewMonitorProxy(
 					monitorProxyOptions.WithLogger(logger),
 					monitorProxyOptions.WithConf(conf),
+					monitorProxyOptions.WithTracer(&opentracing.NoopTracer{}),
 				)
 			}),
 		)
@@ -83,6 +85,7 @@ var rootCmd = &cobra.Command{
 					return mysql.NewMonitorProxy(
 						monitorProxyOptions.WithLogger(logger),
 						monitorProxyOptions.WithConf(conf),
+						monitorProxyOptions.WithTracer(&opentracing.NoopTracer{}),
 					)
 				},
 			),
@@ -114,6 +117,7 @@ var rootCmd = &cobra.Command{
 		ctx := context.Background()
 		ctx, cancel := context.WithCancel(ctx)
 
+		logger.Infoc(ctx, "Startup Transaction Manager")
 		tm.Start(ctx)
 
 		c := make(chan os.Signal, 1)

@@ -12,6 +12,8 @@ type TxrecordRepo interface {
 	FindById(context.Context, int64) entity.Txrecord
 
 	Create(ctx context.Context, txgroup *entity.Txrecord) error
+
+	CountByTxID(ctx context.Context, txID uint64) (int64, error)
 }
 
 type DbTxrecordRepo struct {
@@ -52,4 +54,15 @@ func (dtr *DbTxrecordRepo) Create(ctx context.Context, txrecord *entity.Txrecord
 	}
 
 	return nil
+}
+
+func (dtr *DbTxrecordRepo) CountByTxID(ctx context.Context, txID uint64) (int64, error) {
+	var err error
+	var c int64
+	c, err = dtr.txrecordDao.Count(ctx, "txid = ?", txID)
+	if err != nil {
+		return 0, err
+	}
+
+	return c, nil
 }

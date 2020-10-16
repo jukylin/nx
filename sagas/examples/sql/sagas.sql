@@ -1,26 +1,29 @@
-CREATE TABLE txcompensate (
-  id int COLLATE utf8mb4_general_ci not NULL,
-  txid unsigned bigint Not NULL default 0 COMMENT '事务编号',
+create database sagas;
+CREATE TABLE sagas.txcompensate (
+  id int COLLATE utf8mb4_general_ci not NULL auto_increment,
+  txid bigint unsigned Not NULL default 0 COMMENT '事务编号',
   success int not NULL default 0,
   step int not NULL,
   create_time datetime not NULL DEFAULT CURRENT_TIMESTAMP,
   update_time datetime not NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   is_deleted TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '删除标识',
-  PRIMARY KEY (id) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 comment="补偿结果" COLLATE=utf8mb4_general_ci;
-CREATE TABLE txgroup (
-  id int COLLATE utf8mb4_general_ci not NULL,
-  txid unsigned bigint Not NULL default 0 COMMENT '事务编号',
+  PRIMARY KEY (id) USING BTREE,
+  INDEX txid (txid) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 comment='补偿结果' COLLATE=utf8mb4_general_ci;
+CREATE TABLE sagas.txgroup (
+  id int COLLATE utf8mb4_general_ci not NULL auto_increment,
+  txid bigint unsigned Not NULL default 0 COMMENT '事务编号',
   state int not NULL,
   priority int not NULL,
   create_time datetime not NULL,
   update_time datetime not NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   is_deleted TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '删除标识',
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 comment="事物主表" COLLATE=utf8mb4_general_ci;
-CREATE TABLE txrecord (
-  id int COLLATE utf8mb4_general_ci not NULL,
-  txid unsigned bigint Not NULL default 0 COMMENT '事务编号',
+  PRIMARY KEY (id),
+  INDEX txid (txid) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 comment='事物主表' COLLATE=utf8mb4_general_ci;
+CREATE TABLE sagas.txrecord (
+  id int COLLATE utf8mb4_general_ci not NULL auto_increment,
+  txid bigint unsigned Not NULL default 0 COMMENT '事务编号',
   manner_name varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci not NULL,
   method_name varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci not NULL,
   compensate_name varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci not NULL,
@@ -33,8 +36,12 @@ CREATE TABLE txrecord (
   lookup varchar(255) COLLATE utf8mb4_general_ci not NULL,
   reg_address varchar(500) COLLATE utf8mb4_general_ci not NULL,
   version varchar(255) COLLATE utf8mb4_general_ci not NULL,
+  transport_type int COLLATE utf8mb4_general_ci not NULL default 0,
+  host varchar(255) COLLATE utf8mb4_general_ci not NULL default '',
+  path varchar(255) COLLATE utf8mb4_general_ci not NULL default '',
   create_time datetime not NULL DEFAULT CURRENT_TIMESTAMP,
   update_time datetime not NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   is_deleted TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '删除标识',
-  PRIMARY KEY (id) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 comment="事物步骤" COLLATE=utf8mb4_general_ci;
+  PRIMARY KEY (id) USING BTREE,
+  INDEX txid (txid) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 comment='事物步骤' COLLATE=utf8mb4_general_ci;

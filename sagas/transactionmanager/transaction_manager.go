@@ -137,6 +137,7 @@ func (tm *TransactionManager) Start(ctx context.Context) error {
 
 // 获取200个随机事务组(需要补偿) 添加到事务队列中
 func (tm *TransactionManager) getCompensateToQueue(ctx context.Context) {
+	tm.logger.Debugc(ctx , "开始 getCompensateToQueue")
 	ticker := time.NewTicker(1 * time.Second)
 	var err error
 	for {
@@ -144,6 +145,7 @@ func (tm *TransactionManager) getCompensateToQueue(ctx context.Context) {
 		case <-ticker.C:
 			err = tm.nxlock.Lock(ctx, SagasCompensate, 3)
 			if err != nil {
+				tm.logger.Errorc(ctx, err.Error())
 				tm.cls.state = CompensateLockStateFail
 			} else {
 				tm.cls.state = CompensateLockStateSucc
@@ -151,13 +153,16 @@ func (tm *TransactionManager) getCompensateToQueue(ctx context.Context) {
 
 				txgroups, err := tm.txgroupRepo.GetCompensateList(context.Background(), 200)
 				if err != nil {
-					tm.logger.Errorf(err.Error())
+					tm.logger.Errorc(ctx, err.Error())
 				} else {
+					tm.logger.Debugc(ctx, "%+v", txgroups)
 					for _, txgroup := range txgroups {
 						// TODO 什么时候释放？
 						err = tm.nxlock.Lock(ctx, fmt.Sprintf("%s:%d", SagasCompensateQueue, txgroup.Txid), 10)
 						if err == nil {
 							tm.queue.Produce(txgroup)
+						} else {
+							tm.logger.Errorc(ctx, err.Error())
 						}
 						tm.nxlock.Release(ctx, fmt.Sprintf("%s:%d", SagasCompensateQueue, txgroup.Txid))
 					}
@@ -175,6 +180,7 @@ func (tm *TransactionManager) getCompensateToQueue(ctx context.Context) {
 
 // 每隔1秒 随机获取 1000个 1小时未释放的 事务组列表
 func (tm *TransactionManager) buildCompensate(ctx context.Context) {
+	tm.logger.Debugc(ctx , "开始 buildCompensate")
 	ticker := time.NewTicker(1 * time.Second)
 	var err error
 	for {
@@ -184,12 +190,14 @@ func (tm *TransactionManager) buildCompensate(ctx context.Context) {
 			if err == nil {
 				txgroups, err := tm.txgroupRepo.GetUnfishedTransactionGroup(context.Background(), 3600)
 				if err != nil {
-					tm.logger.Errorf(err.Error())
+					tm.logger.Errorc(ctx, err.Error())
 				} else {
 					for _, txgroup := range txgroups {
 						tm.compensate.BuildCompensate(ctx, txgroup)
 					}
 				}
+			} else {
+				tm.logger.Errorc(ctx, err.Error())
 			}
 			tm.nxlock.Release(ctx, SagasCompensateBuild)
 		case <- ctx.Done():

@@ -14,6 +14,9 @@ type Client struct {
 	*redis.Client
 
 	logger log.Logger
+
+	// 续租的Key
+	keepAliveKey map[string] chan struct{}
 }
 
 type ClientOption func(*Client)
@@ -25,6 +28,8 @@ func NewClient(options ...ClientOption) pkg.NxlockSolution {
 	for _, option := range options {
 		option(rc)
 	}
+
+	rc.keepAliveKey = make(map[string] chan struct{})
 
 	return rc
 }
@@ -48,6 +53,8 @@ func (rc *Client) Lock(ctx context.Context, key string, ttl int64) error {
 		return err
 	}
 
+	rc.keepAliveKey[key] = make(chan struct{}, 1)
+
 	go rc.keepAlive(ctx, key, ttl)
 
 	return nil
@@ -70,7 +77,15 @@ func (rc *Client) set(ctx context.Context, key, val string, ttl int64) error {
 }
 
 func (rc *Client) Release(ctx context.Context, key string) error {
-	return rc.expire(ctx, key, -1)
+	err := rc.expire(ctx, key, -1)
+	if err != nil {
+		return err
+	}
+
+	// 释放续租协程
+	close(rc.keepAliveKey[key])
+	delete(rc.keepAliveKey, key)
+	return nil
 }
 
 // 续租
@@ -82,7 +97,11 @@ func (rc *Client) keepAlive(ctx context.Context, key string, ttl int64) {
 		case <-ticker.C:
 			err := rc.expire(ctx, key, ttl)
 			if err != nil {
-				rc.logger.Errorc(ctx, "续租失败 %s", err.Error())
+				rc.logger.Errorc(ctx, "Nxredis keepAlive %s : %s", key, err.Error())
+			}
+		case _, ok := <-rc.keepAliveKey[key]:
+			if !ok {
+				rc.logger.Infoc(ctx, "关闭续租 %s", key)
 			}
 		case <-ctx.Done():
 			ticker.Stop()
@@ -104,5 +123,9 @@ func (rc *Client) expire(ctx context.Context, key string, ttl int64) error {
 }
 
 func (rc *Client) Close() error {
+	for key, _ := range rc.keepAliveKey {
+		close(rc.keepAliveKey[key])
+		delete(rc.keepAliveKey, key)
+	}
 	return rc.Client.Close()
 }
