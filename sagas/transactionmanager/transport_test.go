@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jukylin/nx/sagas/domain/entity"
+	"github.com/mercari/grpc-http-proxy/proxy"
 )
 
 func TestHTTPTransport_Invoke(t *testing.T) {
@@ -54,17 +55,30 @@ func TestGRPCTransport_Invoke(t *testing.T) {
 		ctx      context.Context
 		txrecord entity.Txrecord
 	}
+
+	ctx := context.Background()
+
+	grpcProxy := proxy.NewProxy()
+
 	tests := []struct {
 		name    string
-		gt      *GRPCTransport
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{"GRPC 补偿", args{ctx, entity.Txrecord{
+			RegAddress:"127.0.0.1:50051",
+			ServiceName:"helloworld.GreeterServer",
+			MethodName:"SayHello",
+			Txid:10001,
+			Params:`{"name":"grpc proxy"}`,
+		}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gt := &GRPCTransport{}
+			gt := GRPCTransport{
+				logger,
+				grpcProxy,
+			}
 			if err := gt.Invoke(tt.args.ctx, tt.args.txrecord); (err != nil) != tt.wantErr {
 				t.Errorf("GRPCTransport.Invoke() error = %v, wantErr %v", err, tt.wantErr)
 			}

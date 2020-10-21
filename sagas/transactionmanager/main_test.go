@@ -5,6 +5,8 @@ import (
 	"testing"
 	"net/http"
 	"fmt"
+	"net"
+	"context"
 	"github.com/jukylin/esim/config"
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/mysql"
@@ -14,6 +16,9 @@ import (
 	"github.com/jukylin/nx/nxlock"
 	"github.com/jukylin/nx/nxlock/nx-redis"
 	ehttp "github.com/jukylin/esim/http"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+	pb "google.golang.org/grpc/examples/helloworld/helloworld"
 )
 
 var logger log.Logger
@@ -113,6 +118,7 @@ func TestMain(m *testing.M) {
 	)
 
 	StartHTTPServer()
+	StartGRPCServer()
 
 	code := m.Run()
 
@@ -139,4 +145,35 @@ func StartHTTPServer()  {
 
 func compensate(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, fmt.Sprintf("Hello txID %s!", r.Header.Get("Txid")))
+}
+
+const (
+	port = ":50051"
+)
+
+// server is used to implement helloworld.GreeterServer.
+type server struct {
+}
+
+// SayHello implements helloworld.GreeterServer
+func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	logger.Infoc(ctx, "Received: %v", in.GetName())
+	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
+}
+
+func StartGRPCServer()  {
+	go func() {
+		lis, err := net.Listen("tcp", port)
+		if err != nil {
+			logger.Fatalf("failed to listen: %v", err)
+		}
+		svr := grpc.NewServer()
+		pb.RegisterGreeterServer(svr, &server{})
+
+		reflection.Register(svr)
+
+		if err := svr.Serve(lis); err != nil {
+			logger.Fatalf("failed to serve: %v", err)
+		}
+	}()
 }
