@@ -3,21 +3,22 @@ package main
 import (
 	"os"
 
-	"github.com/jukylin/esim/log"
-	"github.com/spf13/cobra"
-	"go.uber.org/zap/zapcore"
-	"github.com/jukylin/nx/sagas/transactionmanager"
-	"github.com/jukylin/nx/nxlock/nx-redis"
-	"github.com/jukylin/nx/nxlock"
-	"github.com/jukylin/esim/redis"
-	"github.com/jukylin/nx/sagas/domain/repo"
-	"github.com/jukylin/esim/mysql"
-	"github.com/jukylin/esim/http"
 	"context"
 	"os/signal"
 	"syscall"
+
 	"github.com/jukylin/esim/config"
+	"github.com/jukylin/esim/http"
+	"github.com/jukylin/esim/log"
+	"github.com/jukylin/esim/mysql"
+	"github.com/jukylin/esim/redis"
+	"github.com/jukylin/nx/nxlock"
+	nx_redis "github.com/jukylin/nx/nxlock/nx-redis"
+	"github.com/jukylin/nx/sagas/domain/repo"
+	"github.com/jukylin/nx/sagas/transactionmanager"
 	"github.com/opentracing/opentracing-go"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap/zapcore"
 )
 
 var logger log.Logger
@@ -129,7 +130,7 @@ var rootCmd = &cobra.Command{
 		)
 
 		// TM 初始化
-		tm :=  transactionmanager.NewTransactionManager(
+		tm := transactionmanager.NewTransactionManager(
 			transactionmanager.WithTmLogger(logger),
 			transactionmanager.WithTmNxLock(nl),
 			transactionmanager.WithTmTxgroupRepo(txgroupRepo),

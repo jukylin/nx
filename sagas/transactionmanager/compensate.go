@@ -3,21 +3,18 @@ package transactionmanager
 import (
 	"context"
 
-	"github.com/jukylin/esim/log"
-	"github.com/jukylin/nx/sagas/domain/repo"
-	"github.com/jukylin/esim/http"
-	"github.com/jukylin/nx/sagas/domain/entity"
-	"github.com/jukylin/nx/sagas/domain/value-object"
 	"fmt"
+
+	"github.com/jukylin/esim/http"
+	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/mysql"
+	"github.com/jukylin/nx/sagas/domain/entity"
+	"github.com/jukylin/nx/sagas/domain/repo"
+	value_object "github.com/jukylin/nx/sagas/domain/value-object"
 )
 
 var (
 	ErrDataIsEmpty = "数据为空 %+v"
-
-	ErrHostIsEmpty = "Host为空"
-
-	ErrParamsIsEmpty = "Params为空"
 
 	ErrHTTPStatus = "http响应状态码错误 %d"
 
@@ -66,7 +63,6 @@ func NewBackwardCompensate(options ...BcOption) Compensate {
 
 	return bc
 }
-
 
 func WithBcTxgroupRepo(txgroupRepo repo.TxgroupRepo) BcOption {
 	return func(bc *backwardCompensate) {
@@ -136,7 +132,7 @@ func (bc *backwardCompensate) BuildCompensate(ctx context.Context, txgroup entit
 
 	var err error
 	if txgroup.State != value_object.TranStart {
-		return  fmt.Errorf(ErrStateMustStart, txgroup.Txid, txgroup.State)
+		return fmt.Errorf(ErrStateMustStart, txgroup.Txid, txgroup.State)
 	}
 
 	tx := bc.mysqlClient.GetCtxDb(ctx, "sagas").Begin()

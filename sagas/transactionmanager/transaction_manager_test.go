@@ -7,9 +7,9 @@ import (
 
 	"github.com/jukylin/nx/sagas/domain/entity"
 	"github.com/jukylin/nx/sagas/domain/repo"
-	"github.com/stretchr/testify/assert"
-	"github.com/jukylin/nx/sagas/domain/value-object"
+	value_object "github.com/jukylin/nx/sagas/domain/value-object"
 	"github.com/jukylin/nx/sagas/transactionmanager/mocks"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTransactionManager_getCompensateToQueue(t *testing.T) {
@@ -54,15 +54,15 @@ func TestTransactionManager_execCompensate(t *testing.T) {
 	ctx := context.Background()
 
 	txgroup := entity.Txgroup{
-		Txid:12312,
+		Txid: 12312,
 	}
 
 	compensate := &mocks.Compensate{}
 	compensate.On("ExeCompensate", ctx, txgroup)
 
 	tests := []struct {
-		name   string
-		args   args
+		name string
+		args args
 	}{
 		{"执行补偿-类型错误", args{entity.Txrecord{}}},
 		{"执行补偿-成功", args{txgroup}},

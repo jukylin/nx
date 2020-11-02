@@ -1,24 +1,27 @@
 package transactionmanager
 
 import (
-	"os"
-	"testing"
-	"net/http"
+	"context"
+	"errors"
 	"fmt"
 	"net"
-	"context"
+	"net/http"
+	"os"
+	"testing"
+
 	"github.com/jukylin/esim/config"
+	ehttp "github.com/jukylin/esim/http"
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/mysql"
-	docker_test "github.com/jukylin/nx/sagas/docker-test"
-	"gorm.io/gorm"
 	"github.com/jukylin/esim/redis"
 	"github.com/jukylin/nx/nxlock"
-	"github.com/jukylin/nx/nxlock/nx-redis"
-	ehttp "github.com/jukylin/esim/http"
+	nx_redis "github.com/jukylin/nx/nxlock/nx-redis"
+	docker_test "github.com/jukylin/nx/sagas/docker-test"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/reflection"
+	"gorm.io/gorm"
 )
 
 var logger log.Logger
@@ -44,6 +47,9 @@ func TestMain(m *testing.M) {
 
 	conf = config.NewMemConfig()
 	conf.Set("debug", true)
+
+	StartHTTPServer()
+	StartGRPCServer()
 
 	dt := docker_test.NewDockerTest(logger, 250)
 	dt.RunReids()
@@ -102,7 +108,6 @@ func TestMain(m *testing.M) {
 		nxlock.WithSolution(nxRedis),
 	)
 
-
 	httpClientOptions := ehttp.ClientOptions{}
 	httpClient = ehttp.NewClient(
 		httpClientOptions.WithLogger(logger),
@@ -117,9 +122,6 @@ func TestMain(m *testing.M) {
 		),
 	)
 
-	StartHTTPServer()
-	StartGRPCServer()
-
 	code := m.Run()
 
 	mysqlClient.Close()
@@ -131,7 +133,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func StartHTTPServer()  {
+func StartHTTPServer() {
 	go func() {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/compensate", compensate)
@@ -153,15 +155,25 @@ const (
 
 // server is used to implement helloworld.GreeterServer.
 type server struct {
+	pb.UnimplementedGreeterServer
 }
 
 // SayHello implements helloworld.GreeterServer
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	logger.Infoc(ctx, "Received: %v", in.GetName())
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		md = metadata.New(nil)
+	}
+	logger.Infoc(ctx, "txid %s", md.Get("txid"))
+	if in.GetName() == "error" {
+		return nil, errors.New("error")
+	}
+
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
-func StartGRPCServer()  {
+func StartGRPCServer() {
 	go func() {
 		lis, err := net.Listen("tcp", port)
 		if err != nil {

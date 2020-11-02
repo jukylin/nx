@@ -3,11 +3,12 @@ package repo
 import (
 	"context"
 
+	"time"
+
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/sagas/domain/dao"
 	"github.com/jukylin/nx/sagas/domain/entity"
 	value_object "github.com/jukylin/nx/sagas/domain/value-object"
-	"time"
 	"gorm.io/gorm"
 )
 
@@ -79,7 +80,7 @@ func (dtr *DbTxgroupRepo) SetStateBytxID(ctx context.Context, state int, txID ui
 
 func (dtr *DbTxgroupRepo) SetStateWithTx(ctx context.Context, tx *gorm.DB, state int, txID uint64) error {
 	var err error
-	_, err = dtr.txgroupDao.UpdateByTran(ctx, tx, entity.Txgroup{State:state}, "txid = ?", txID)
+	_, err = dtr.txgroupDao.UpdateByTran(ctx, tx, entity.Txgroup{State: state}, "txid = ?", txID)
 	if err != nil {
 		return err
 	}
@@ -103,7 +104,7 @@ func (dtr *DbTxgroupRepo) GetUnfishedTransactionGroup(ctx context.Context, inter
 	var txgroup []entity.Txgroup
 	txgroup, err = dtr.txgroupDao.List(ctx, "id, txid, state, priority", 1000,
 		"state = ? and is_deleted = 0 and create_time < ?", value_object.TranStart,
-			time.Now().Add(- time.Duration(intervals) * time.Second))
+		time.Now().Add(-time.Duration(intervals)*time.Second))
 	if err != nil {
 		return txgroup, err
 	}

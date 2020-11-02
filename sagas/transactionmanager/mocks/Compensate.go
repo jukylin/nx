@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	entity "github.com/jukylin/nx/saga/domain/entity"
+	entity "github.com/jukylin/nx/sagas/domain/entity"
 	mock "github.com/stretchr/testify/mock"
 )
 

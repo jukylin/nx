@@ -117,7 +117,7 @@ func (td *TxcompensateDao) Update(ctx context.Context,
 }
 
 func (td *TxcompensateDao) InsertUpdateFromRecord(ctx context.Context, tx *gorm.DB, txID uint64) (int64, error) {
-	resDb := tx.Exec("insert into txcompensate(txid, id, success, create_time, update_time, step) " +
+	resDb := tx.Exec("insert into txcompensate(txid, id, success, create_time, update_time, step) "+
 		"SELECT txid, id, 0, NOW(), NOW(), step FROM txrecord where txid = ?", txID)
 	return resDb.RowsAffected, resDb.Error
 }

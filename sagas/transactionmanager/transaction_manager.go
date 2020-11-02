@@ -11,6 +11,7 @@ import (
 	"github.com/jukylin/nx/nxlock"
 	"github.com/jukylin/nx/sagas/domain/entity"
 	"github.com/jukylin/nx/sagas/domain/repo"
+	"github.com/jukylin/esim/pkg/tracer-id"
 )
 
 const (
@@ -137,7 +138,7 @@ func (tm *TransactionManager) Start(ctx context.Context) error {
 
 // 获取200个随机事务组(需要补偿) 添加到事务队列中
 func (tm *TransactionManager) getCompensateToQueue(ctx context.Context) {
-	tm.logger.Debugc(ctx , "开始 getCompensateToQueue")
+	tm.logger.Debugc(ctx, "开始 getCompensateToQueue")
 	ticker := time.NewTicker(1 * time.Second)
 	var err error
 	for {
@@ -157,19 +158,18 @@ func (tm *TransactionManager) getCompensateToQueue(ctx context.Context) {
 				} else {
 					tm.logger.Debugc(ctx, "%+v", txgroups)
 					for _, txgroup := range txgroups {
-						// TODO 什么时候释放？
-						err = tm.nxlock.Lock(ctx, fmt.Sprintf("%s:%d", SagasCompensateQueue, txgroup.Txid), 10)
+						// err = tm.nxlock.Lock(ctx, fmt.Sprintf("%s:%d", SagasCompensateQueue, txgroup.Txid), 10)
 						if err == nil {
 							tm.queue.Produce(txgroup)
 						} else {
 							tm.logger.Errorc(ctx, err.Error())
 						}
-						tm.nxlock.Release(ctx, fmt.Sprintf("%s:%d", SagasCompensateQueue, txgroup.Txid))
+						// tm.nxlock.Release(ctx, fmt.Sprintf("%s:%d", SagasCompensateQueue, txgroup.Txid))
 					}
 				}
 			}
 			tm.nxlock.Release(ctx, SagasCompensate)
-		case <- ctx.Done():
+		case <-ctx.Done():
 			tm.logger.Infoc(ctx, "补偿任务退出.")
 			ticker.Stop()
 			return
@@ -177,30 +177,31 @@ func (tm *TransactionManager) getCompensateToQueue(ctx context.Context) {
 	}
 }
 
-
 // 每隔1秒 随机获取 1000个 1小时未释放的 事务组列表
 func (tm *TransactionManager) buildCompensate(ctx context.Context) {
-	tm.logger.Debugc(ctx , "开始 buildCompensate")
+	tm.logger.Debugc(ctx, "开始 buildCompensate")
 	ticker := time.NewTicker(1 * time.Second)
 	var err error
 	for {
 		select {
 		case <-ticker.C:
 			err = tm.nxlock.Lock(ctx, SagasCompensateBuild, 3)
-			if err == nil {
-				txgroups, err := tm.txgroupRepo.GetUnfishedTransactionGroup(context.Background(), 3)
-				if err != nil {
-					tm.logger.Errorc(ctx, err.Error())
-				} else {
-					for _, txgroup := range txgroups {
-						tm.compensate.BuildCompensate(ctx, txgroup)
-					}
-				}
-			} else {
+			if err != nil {
 				tm.logger.Errorc(ctx, err.Error())
+				continue
 			}
+
+			txgroups, err := tm.txgroupRepo.GetUnfishedTransactionGroup(context.Background(), 3)
+			if err != nil {
+				tm.logger.Errorc(ctx, err.Error())
+			} else {
+				for _, txgroup := range txgroups {
+					tm.compensate.BuildCompensate(ctx, txgroup)
+				}
+			}
+
 			tm.nxlock.Release(ctx, SagasCompensateBuild)
-		case <- ctx.Done():
+		case <-ctx.Done():
 			tm.logger.Infoc(ctx, "建立补偿任务退出.")
 			ticker.Stop()
 			return
@@ -216,22 +217,32 @@ func (tm *TransactionManager) execCompensate(item interface{}) {
 		tm.logger.Errorc(ctx, "类型错误 ： %T，期望 entity.Txgroup", item)
 		return
 	}
-	tm.logger.Infof("txID %d", txgroup.Txid)
+
+	context.WithValue(ctx, tracerid.ActiveEsimKey, txgroup.Txid)
 
 	err := tm.nxlock.Lock(ctx, fmt.Sprintf("%s:%d", SagasCompensateExec, txgroup.Txid), 10)
-	if err == nil {
-		tm.logger.Infof("Exec compensate txID %d", txgroup.Txid)
-		err = tm.compensate.ExeCompensate(ctx, txgroup)
-		if err != nil {
-			tm.logger.Errorc(ctx, err.Error())
-		}
-	} else {
+	if err != nil {
+		tm.logger.Errorc(ctx, err.Error())
+		return
+	}
+
+	tm.logger.Infoc(ctx, "Start execCompensate")
+
+	err = tm.compensate.ExeCompensate(ctx, txgroup)
+	if err != nil {
+		tm.logger.Errorc(ctx, err.Error())
+		return
+	}
+
+	tm.logger.Infoc(ctx, "End execCompensate")
+
+	err = tm.nxlock.Release(ctx, fmt.Sprintf("%s:%d", SagasCompensateExec, txgroup.Txid))
+	if err != nil {
 		tm.logger.Errorc(ctx, err.Error())
 	}
-	tm.nxlock.Release(ctx, fmt.Sprintf("%s:%d", SagasCompensateExec, txgroup.Txid))
 }
 
-func (tm *TransactionManager) Close()  {
+func (tm *TransactionManager) Close() {
 	tm.nxlock.Close()
 	tm.queue.Stop()
 }

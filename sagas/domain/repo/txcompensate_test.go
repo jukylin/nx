@@ -11,7 +11,7 @@ import (
 func TestDbTxcompensateRepo_InsertUpdateFromRecord(t *testing.T) {
 	type args struct {
 		ctx  context.Context
-		db *gorm.DB
+		db   *gorm.DB
 		txID uint64
 	}
 
@@ -19,7 +19,7 @@ func TestDbTxcompensateRepo_InsertUpdateFromRecord(t *testing.T) {
 
 	tr := NewDbTxrecordRepo(logger)
 	tr.Create(ctx, &entity.Txrecord{
-		Txid:100,
+		Txid: 100,
 	})
 
 	db := mysqlClient.GetCtxDb(ctx, "sagas").Begin()

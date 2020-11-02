@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"sync"
+
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/redis"
 	"github.com/jukylin/nx/nxlock/pkg"
@@ -16,7 +18,9 @@ type Client struct {
 	logger log.Logger
 
 	// 续租的Key
-	keepAliveKey map[string] chan struct{}
+	keepAliveKey map[string]chan struct{}
+
+	mutex *sync.RWMutex
 }
 
 type ClientOption func(*Client)
@@ -29,8 +33,9 @@ func NewClient(options ...ClientOption) pkg.NxlockSolution {
 		option(rc)
 	}
 
-	rc.keepAliveKey = make(map[string] chan struct{})
+	rc.keepAliveKey = make(map[string]chan struct{})
 
+	rc.mutex = &sync.RWMutex{}
 	return rc
 }
 
@@ -53,9 +58,11 @@ func (rc *Client) Lock(ctx context.Context, key string, ttl int64) error {
 		return err
 	}
 
-	rc.keepAliveKey[key] = make(chan struct{}, 1)
-
-	go rc.keepAlive(ctx, key, ttl)
+	keepAliveChan := make(chan struct{}, 1)
+	rc.mutex.Lock()
+	rc.keepAliveKey[key] = keepAliveChan
+	rc.mutex.Unlock()
+	go rc.keepAlive(ctx, key, ttl, keepAliveChan)
 
 	return nil
 }
@@ -83,13 +90,16 @@ func (rc *Client) Release(ctx context.Context, key string) error {
 	}
 
 	// 释放续租协程
+	rc.mutex.Lock()
 	close(rc.keepAliveKey[key])
 	delete(rc.keepAliveKey, key)
+	rc.mutex.Unlock()
+
 	return nil
 }
 
 // 续租
-func (rc *Client) keepAlive(ctx context.Context, key string, ttl int64) {
+func (rc *Client) keepAlive(ctx context.Context, key string, ttl int64, keepAliveChan chan struct{}) {
 	ticker := time.NewTicker(time.Duration(ttl/3) * time.Second)
 
 	for {
@@ -99,7 +109,7 @@ func (rc *Client) keepAlive(ctx context.Context, key string, ttl int64) {
 			if err != nil {
 				rc.logger.Errorc(ctx, "Nxredis keepAlive %s : %s", key, err.Error())
 			}
-		case _, ok := <-rc.keepAliveKey[key]:
+		case _, ok := <-keepAliveChan:
 			if !ok {
 				rc.logger.Infoc(ctx, "Nxredis keepAlive 关闭续租 %s", key)
 				return

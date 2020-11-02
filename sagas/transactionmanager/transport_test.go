@@ -21,20 +21,20 @@ func TestHTTPTransport_Invoke(t *testing.T) {
 		wantErr bool
 	}{
 		{"Host为空", args{ctx, entity.Txrecord{
-			ID:1,
-			Txid:100,
+			ID:   1,
+			Txid: 100,
 		}}, true},
 		{"Params为空", args{ctx, entity.Txrecord{
-			ID:1,
-			Txid:100,
-			Host:"http://127.0.0.1",
+			ID:   1,
+			Txid: 100,
+			Host: "http://127.0.0.1",
 		}}, true},
 		{"补偿成功", args{ctx, entity.Txrecord{
-			ID:1,
-			Txid:100,
-			Host:"http://127.0.0.1:8082",
-			Path: "/compensate",
-			Params:`{"name":"test"}`,
+			ID:     1,
+			Txid:   100,
+			Host:   "http://127.0.0.1:8082",
+			Path:   "/compensate",
+			Params: `{"name":"test"}`,
 		}}, false},
 	}
 	for _, tt := range tests {
@@ -66,12 +66,20 @@ func TestGRPCTransport_Invoke(t *testing.T) {
 		wantErr bool
 	}{
 		{"GRPC 补偿", args{ctx, entity.Txrecord{
-			RegAddress:"127.0.0.1:50051",
-			ServiceName:"helloworld.GreeterServer",
-			MethodName:"SayHello",
-			Txid:10001,
-			Params:`{"name":"grpc proxy"}`,
+			RegAddress:  "localhost:50051",
+			ServiceName: "helloworld.Greeter",
+			MethodName:  "SayHello",
+			Txid:        10001,
+			Params:      `{"name":"grpc proxy"}`,
 		}}, false},
+
+		{"GRPC 补偿 —— 业务处理失败", args{ctx, entity.Txrecord{
+			RegAddress:  "localhost:50051",
+			ServiceName: "helloworld.Greeter",
+			MethodName:  "SayHello",
+			Txid:        10001,
+			Params:      `{"name":"error"}`,
+		}}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

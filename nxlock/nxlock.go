@@ -5,10 +5,11 @@ import (
 	"errors"
 	"sync"
 
+	"fmt"
+
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/nxlock/pkg"
 	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
-	"fmt"
 )
 
 type Option func(*Nxlock)

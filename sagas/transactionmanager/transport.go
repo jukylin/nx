@@ -1,21 +1,23 @@
 package transactionmanager
 
 import (
-	"context"
-	"github.com/jukylin/nx/sagas/domain/value-object"
-	"fmt"
 	"bytes"
-	"github.com/jukylin/nx/sagas/domain/entity"
-	"github.com/jukylin/esim/log"
-	"github.com/jukylin/esim/http"
-	http2 "net/http"
+	"context"
+	"fmt"
 	"io/ioutil"
-	"github.com/jukylin/esim/grpc"
-	"github.com/jukylin/nx/sagas"
-	"strconv"
-	"github.com/mercari/grpc-http-proxy/proxy"
+	http2 "net/http"
 	"net/url"
-	"github.com/mercari/grpc-http-proxy/metadata"
+	"strconv"
+
+	"github.com/jukylin/esim/grpc"
+	"github.com/jukylin/esim/http"
+	"github.com/jukylin/esim/log"
+	"github.com/jukylin/nx/sagas"
+	"github.com/jukylin/nx/sagas/domain/entity"
+	value_object "github.com/jukylin/nx/sagas/domain/value-object"
+	gpmetadata "github.com/mercari/grpc-http-proxy/metadata"
+	"github.com/mercari/grpc-http-proxy/proxy"
+	"google.golang.org/grpc/metadata"
 )
 
 type Transport interface {
@@ -34,7 +36,7 @@ type TransportFactory struct {
 
 type TfOption func(*TransportFactory)
 
-func NewTransportFactory(options ...TfOption) *TransportFactory  {
+func NewTransportFactory(options ...TfOption) *TransportFactory {
 	tf := &TransportFactory{}
 	for _, option := range options {
 		option(tf)
@@ -91,18 +93,15 @@ type HTTPTransport struct {
 
 // 使用http协议调用补偿接口，响应状态码为200，即补偿成功
 func (ht *HTTPTransport) Invoke(ctx context.Context, txrecord entity.Txrecord) error {
-	if txrecord.Host == "" {
-		return fmt.Errorf(ErrHostIsEmpty)
+	err := txrecord.CheckHTTParam()
+	if err != nil {
+		return err
 	}
 
-	if txrecord.Params == "" {
-		return fmt.Errorf(ErrParamsIsEmpty)
-	}
+	httpUrl := txrecord.BuildHTTPUrl()
+	ht.logger.Infoc(ctx, "httpInvoker actionId: %d, txID: %d, url %s", txrecord.ID, txrecord.Txid, httpUrl)
 
-	url := fmt.Sprintf("%s:%s", txrecord.Host, txrecord.Path)
-	ht.logger.Infoc(ctx, "httpInvoker actionId: %d, txID: %d, url %s", txrecord.ID, txrecord.Txid, url)
-
-	req, err := http2.NewRequestWithContext(ctx, http2.MethodPost, url, bytes.NewBuffer([]byte(txrecord.Params)))
+	req, err := http2.NewRequestWithContext(ctx, http2.MethodPost, httpUrl, bytes.NewBuffer([]byte(txrecord.Params)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(sagas.TranContextHeaderName, strconv.FormatUint(txrecord.Txid, 10))
 
@@ -121,7 +120,7 @@ func (ht *HTTPTransport) Invoke(ctx context.Context, txrecord entity.Txrecord) e
 		return err
 	}
 
-	ht.logger.Infoc(ctx, "%s body: %s", url, body)
+	ht.logger.Infoc(ctx, "%s body: %s", httpUrl, body)
 
 	return nil
 }
@@ -137,18 +136,26 @@ func (gt *GRPCTransport) Invoke(ctx context.Context, txrecord entity.Txrecord) e
 	var u *url.URL
 	var resp []byte
 
-	u, err = url.ParseRequestURI(txrecord.RegAddress)
+	u, err = url.Parse(txrecord.RegAddress)
 	if err != nil {
 		return err
 	}
+
+	gt.logger.Debugc(ctx, "target %s", u.String())
 
 	err = gt.grpcProxy.Connect(ctx, u)
 	if err != nil {
 		return err
 	}
+	defer gt.grpcProxy.CloseConn()
 
-	md := make(metadata.Metadata, 1)
-	md[sagas.TranContextHeaderName] = []string{strconv.FormatUint(txrecord.Txid, 10)}
+	md := make(gpmetadata.Metadata)
+
+	md["txid"] = []string{strconv.FormatUint(txrecord.Txid, 10)}
+	ctx = metadata.NewOutgoingContext(ctx, (metadata.MD)(md))
+
+	gt.logger.Infoc(ctx, "service name = %s, method name = %s, params = %s",
+		txrecord.ServiceName, txrecord.MethodName, txrecord.Params)
 	resp, err = gt.grpcProxy.Call(ctx, txrecord.ServiceName, txrecord.MethodName, []byte(txrecord.Params), &md)
 	if err != nil {
 		return err
@@ -158,4 +165,3 @@ func (gt *GRPCTransport) Invoke(ctx context.Context, txrecord entity.Txrecord) e
 
 	return nil
 }
-

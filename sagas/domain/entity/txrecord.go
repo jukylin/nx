@@ -2,6 +2,13 @@ package entity
 
 import (
 	"time"
+	"fmt"
+)
+
+const (
+	ErrHostIsEmpty = "Host为空"
+
+	ErrParamsIsEmpty = "Params为空"
 )
 
 type Txrecord struct {
@@ -54,4 +61,20 @@ func (t Txrecord) DelKey() string {
 
 func (t Txrecord) IsEmpty() bool {
 	return t.ID == 0
+}
+
+func (t Txrecord) CheckHTTParam() error {
+	if t.Host == "" {
+		return fmt.Errorf(ErrHostIsEmpty)
+	}
+
+	if t.Params == "" {
+		return fmt.Errorf(ErrParamsIsEmpty)
+	}
+
+	return nil
+}
+
+func (t Txrecord) BuildHTTPUrl() string {
+	return fmt.Sprintf("%s:%s", t.Host, t.Path)
 }

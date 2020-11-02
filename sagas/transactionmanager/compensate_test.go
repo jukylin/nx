@@ -6,8 +6,8 @@ import (
 
 	"github.com/jukylin/nx/sagas/domain/entity"
 	"github.com/jukylin/nx/sagas/domain/repo"
+	value_object "github.com/jukylin/nx/sagas/domain/value-object"
 	"github.com/stretchr/testify/assert"
-	"github.com/jukylin/nx/sagas/domain/value-object"
 )
 
 func Test_backwardCompensate_BuildCompensate(t *testing.T) {
@@ -62,17 +62,17 @@ func Test_backwardCompensate_CompensateHook(t *testing.T) {
 
 	ctx := context.Background()
 
-	TxgroupRepo.Create(ctx, &entity.Txgroup{ID:1, Txid:1001, State:value_object.TranCompensate})
+	TxgroupRepo.Create(ctx, &entity.Txgroup{ID: 1, Txid: 1001, State: value_object.TranCompensate})
 
-	txcompensateRepo.Create(ctx, &entity.Txcompensate{ID:1, Success:1, Txid:1001})
-	txcompensateRepo.Create(ctx, &entity.Txcompensate{ID:2, Success:1, Txid:1001})
+	txcompensateRepo.Create(ctx, &entity.Txcompensate{ID: 1, Success: 1, Txid: 1001})
+	txcompensateRepo.Create(ctx, &entity.Txcompensate{ID: 2, Success: 1, Txid: 1001})
 
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"补偿完成", args{ctx, entity.Txgroup{ID:1, Txid:1001}}, false},
+		{"补偿完成", args{ctx, entity.Txgroup{ID: 1, Txid: 1001}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

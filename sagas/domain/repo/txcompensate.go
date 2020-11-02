@@ -3,11 +3,12 @@ package repo
 import (
 	"context"
 
+	"fmt"
+
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/nx/sagas/domain/dao"
 	"github.com/jukylin/nx/sagas/domain/entity"
 	"gorm.io/gorm"
-	"fmt"
 )
 
 type TxcompensateRepo interface {
@@ -49,7 +50,7 @@ func (dtr *DbTxcompensateRepo) FindByTxID(ctx context.Context, txID uint64) enti
 	var err error
 
 	txcompensate, err = dtr.txcompensateDao.Find(ctx, "*", "txid = ? and is_deleted = ?", txID, 0)
-	if err != nil && err != gorm.ErrRecordNotFound{
+	if err != nil && err != gorm.ErrRecordNotFound {
 		dtr.logger.Errorc(ctx, err.Error())
 	}
 
@@ -76,7 +77,7 @@ func (dtr *DbTxcompensateRepo) GetCompensateListByTxID(ctx context.Context, txID
 	var err error
 
 	txcompensates, err = dtr.txcompensateDao.List(ctx, "*", 20, "txid = ? and is_deleted = ? and success = 0", txID, 0)
-	if err != nil && err != gorm.ErrRecordNotFound{
+	if err != nil && err != gorm.ErrRecordNotFound {
 		dtr.logger.Errorc(ctx, err.Error())
 	}
 
@@ -87,7 +88,7 @@ func (dtr *DbTxcompensateRepo) CompensateSuccess(ctx context.Context, id int) er
 	var err error
 	var rowsAffected int64
 
-	rowsAffected, err = dtr.txcompensateDao.Update(ctx, map[string]interface{}{"success":1}, "id = ?", id)
+	rowsAffected, err = dtr.txcompensateDao.Update(ctx, map[string]interface{}{"success": 1}, "id = ?", id)
 	if err != nil {
 		return err
 	}

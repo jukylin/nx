@@ -1,25 +1,26 @@
 package main
 
 import (
-	"net/http"
-	"fmt"
-	"time"
-	"github.com/jukylin/esim/log"
-	"github.com/jukylin/nx/sagas/domain/repo"
-	"github.com/jukylin/nx/sagas"
-	"github.com/opentracing/opentracing-go"
-	"github.com/jukylin/nx/sagas/domain/entity"
-	"io/ioutil"
-	"github.com/jukylin/esim/mysql"
-	"github.com/jukylin/esim/config"
 	"context"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strconv"
-	"github.com/jukylin/nx/sagas/domain/value-object"
+	"time"
+
+	"github.com/jukylin/esim/config"
+	"github.com/jukylin/esim/log"
+	"github.com/jukylin/esim/mysql"
+	"github.com/jukylin/nx/sagas"
+	"github.com/jukylin/nx/sagas/domain/entity"
+	"github.com/jukylin/nx/sagas/domain/repo"
+	value_object "github.com/jukylin/nx/sagas/domain/value-object"
+	"github.com/opentracing/opentracing-go"
 )
 
 var logger log.Logger
 
-func main()  {
+func main() {
 	go func() {
 		InitHttpServer()
 	}()

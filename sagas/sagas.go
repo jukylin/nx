@@ -28,6 +28,8 @@ type EsimSagas struct {
 
 	txrecordRepo repo.TxrecordRepo
 
+	tracer opentracing.Tracer
+
 	sf *sonyflake.Sonyflake
 }
 
@@ -38,6 +40,10 @@ func NewEsimSagas(options ...EssOption) Sagas {
 
 	for _, option := range options {
 		option(ess)
+	}
+
+	if ess.tracer == nil {
+		ess.tracer = opentracing.NoopTracer{}
 	}
 
 	ess.sf = sonyflake.NewSonyflake(sonyflake.Settings{})
@@ -63,6 +69,12 @@ func WithEssTxrecordRepo(txrecordRepo repo.TxrecordRepo) EssOption {
 	}
 }
 
+func WithEssTracer(tracer opentracing.Tracer) EssOption {
+	return func(ess *EsimSagas) {
+		ess.tracer = tracer
+	}
+}
+
 // 缺优先级.
 func (ess *EsimSagas) StartTransaction(ctx context.Context) (Transaction, error) {
 	var err error
@@ -76,6 +88,11 @@ func (ess *EsimSagas) StartTransaction(ctx context.Context) (Transaction, error)
 	if err != nil {
 		return nil, err
 	}
+
+	parSpan := opentracing.SpanFromContext(ctx)
+	span := ess.tracer.StartSpan("transaction", opentracing.ChildOf(parSpan.Context()))
+	span.SetTag("tran_id", tc.txId)
+	et.span = span
 
 	et.context = tc
 
@@ -102,6 +119,7 @@ func (ess *EsimSagas) CreateSaga(ctx context.Context, txID uint64) (Saga, error)
 	es.logger = ess.logger
 	es.txrecordRepo = ess.txrecordRepo
 	es.txID = txID
+	es.tracer = ess.tracer
 
 	return es, nil
 }

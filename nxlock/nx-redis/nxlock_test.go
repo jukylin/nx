@@ -5,6 +5,9 @@ import (
 	"os"
 	"testing"
 
+	"fmt"
+	"sync"
+
 	"github.com/jukylin/esim/config"
 	"github.com/jukylin/esim/log"
 	"github.com/jukylin/esim/redis"
@@ -50,8 +53,6 @@ func TestRedisClient_Lock(t *testing.T) {
 	assert.False(t, res)
 }
 
-
-
 func TestRedisClient_keepAliveKey(t *testing.T) {
 	clientOptions := redis.ClientOptions{}
 	client := redis.NewClient(
@@ -67,16 +68,51 @@ func TestRedisClient_keepAliveKey(t *testing.T) {
 	key := "TestRedisClient_keepAliveKey"
 	err := rclient.Lock(ctx, key, 10)
 	assert.Nil(t, err)
-	_, ok := rclient.(*Client).keepAliveKey[key];
+	_, ok := rclient.(*Client).keepAliveKey[key]
 	assert.True(t, ok)
 
 	err = rclient.Release(ctx, key)
 	assert.Nil(t, err)
-	_, ok = rclient.(*Client).keepAliveKey[key];
+	_, ok = rclient.(*Client).keepAliveKey[key]
 	assert.False(t, ok)
 
 	conn := client.GetCtxRedisConn()
 	res, nil := redis.Bool(conn.Do(context.Background(), "exists", key))
 	assert.Nil(t, nil)
 	assert.False(t, res)
+}
+
+func TestRedisClient_MulGoLock(t *testing.T) {
+	clientOptions := redis.ClientOptions{}
+	client := redis.NewClient(
+		clientOptions.WithLogger(logger),
+		clientOptions.WithConf(conf),
+	)
+
+	rclient := NewClient(
+		WithLogger(logger),
+		WithClient(client),
+	)
+	ctx := context.Background()
+
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func(i int) {
+			key := fmt.Sprintf("%s%d", "TestRedisClient_Lock", i)
+			err := rclient.Lock(ctx, key, 10)
+			assert.Nil(t, err)
+			err = rclient.Release(ctx, key)
+			assert.Nil(t, err)
+
+			conn := client.GetCtxRedisConn()
+			res, nil := redis.Bool(conn.Do(context.Background(), "exists", key))
+			assert.Nil(t, nil)
+			assert.False(t, res)
+			conn.Close()
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
 }

@@ -9,7 +9,7 @@ import (
 func TestDockerTest_RunReids(t *testing.T) {
 	logger := log.NewLogger()
 	tests := []struct {
-		name   string
+		name string
 	}{
 		{"启动redis"},
 	}

@@ -5,9 +5,10 @@ import (
 	"reflect"
 	"testing"
 
+	"time"
+
 	"github.com/jukylin/nx/sagas/domain/entity"
 	"github.com/magiconair/properties/assert"
-	"time"
 )
 
 func TestDbTxgroupRepo_GetCompensateList(t *testing.T) {
@@ -52,17 +53,17 @@ func TestDbTxgroupRepo_GetUnfishedTransactionGroup(t *testing.T) {
 		want    int
 		wantErr bool
 	}{
-		{"查询为结束的事物", args{ctx, 3600},2 ,false},
+		{"查询为结束的事物", args{ctx, 3600}, 2, false},
 	}
 
 	dtr := NewDbTxgroupRepo(logger)
 	dtr.Create(ctx, &entity.Txgroup{
-		Txid:100,
-		CreateTime:time.Now().Add(- 3600 * 2 * time.Second),
+		Txid:       100,
+		CreateTime: time.Now().Add(-3600 * 2 * time.Second),
 	})
 	dtr.Create(ctx, &entity.Txgroup{
-		Txid:200,
-		CreateTime:time.Now().Add(- 3600 * 2 * time.Second),
+		Txid:       200,
+		CreateTime: time.Now().Add(-3600 * 2 * time.Second),
 	})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
