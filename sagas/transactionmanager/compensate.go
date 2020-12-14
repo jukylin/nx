@@ -123,10 +123,11 @@ func (bc *backwardCompensate) ExeCompensate(ctx context.Context, txgroup entity.
 		bc.logger.Errorc(ctx, err.Error())
 	}
 
+
 	return nil
 }
 
-// 生产补偿状态数据，和修改事物组状态
+// 生成补偿状态数据，和修改事物组状态
 func (bc *backwardCompensate) BuildCompensate(ctx context.Context, txgroup entity.Txgroup) error {
 	bc.logger.Infoc(ctx, "processorBuildCompensate txID %d actionId %d", txgroup.Txid, txgroup.ID)
 
@@ -162,6 +163,7 @@ func (bc *backwardCompensate) BuildCompensate(ctx context.Context, txgroup entit
 }
 
 // 补偿服务
+// 补偿失败，或补偿记录更新失败，会重新补偿，需要业务保证幂等性
 func (bc *backwardCompensate) CompensateRecord(ctx context.Context, txcompensate entity.Txcompensate) error {
 	bc.logger.Infoc(ctx, "processorCompensateRecord txID %d actionId %d", txcompensate.Txid, txcompensate.ID)
 
@@ -181,20 +183,20 @@ func (bc *backwardCompensate) CompensateRecord(ctx context.Context, txcompensate
 
 	err = ts.Invoke(ctx, txrecord)
 	if err != nil {
-		bc.logger.Errorc(ctx, "GetTransport %s", err.Error())
-	} else {
-		// 状态更新失败，也作为成功返回
-		// 重新补偿业务服务，需要业务保证幂等性
-		err = bc.txcompensateRepo.CompensateSuccess(ctx, txcompensate.ID)
-		if err != nil {
-			bc.logger.Errorc(ctx, err.Error())
-		}
+		return fmt.Errorf("invoke error %s", err.Error())
 	}
+
+	err = bc.txcompensateRepo.CompensateSuccess(ctx, txcompensate.ID)
+	if err != nil {
+		return err
+	}
+
 
 	return nil
 }
 
 // 完全补偿完毕，修改事务组状态
+// 更新状态前会检查是否有未补偿完的事物
 func (bc *backwardCompensate) CompensateHook(ctx context.Context, txgroup entity.Txgroup) error {
 	bc.logger.Infoc(ctx, "CompensateHook txID %d", txgroup.Txid)
 

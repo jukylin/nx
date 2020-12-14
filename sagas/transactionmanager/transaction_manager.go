@@ -191,7 +191,7 @@ func (tm *TransactionManager) buildCompensate(ctx context.Context) {
 				continue
 			}
 
-			txgroups, err := tm.txgroupRepo.GetUnfishedTransactionGroup(context.Background(), 3)
+			txgroups, err := tm.txgroupRepo.GetUnfishedTransactionGroup(context.Background(), 3600)
 			if err != nil {
 				tm.logger.Errorc(ctx, err.Error())
 			} else {
